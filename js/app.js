@@ -2,6 +2,7 @@ import { categories } from '../data/categories.js';
 import { difficultyMeta,pickTask,parseAnswer,equal } from './core.js';
 import { loadProgress,saveProgress } from './progress.js';
 import { worldState } from './world.js';
+import { playCorrect,playWrong,playHint,playStreak,playUnlock } from './audio.js';
 
 let difficulty='easy';
 let selected=null;
@@ -14,24 +15,59 @@ let solutionOffered=false;
 let solutionShown=false;
 
 const $=s=>document.querySelector(s);
+const $$=s=>[...document.querySelectorAll(s)];
+
 const ui={
   switch:$('#difficultySwitch'),grid:$('#categoryGrid'),panel:$('#exercisePanel'),back:$('#backBtn'),
   meta:$('#exerciseMeta'),title:$('#exerciseTitle'),badge:$('#difficultyBadge'),q:$('#questionText'),answer:$('#answerArea'),
   feedback:$('#feedback'),hint:$('#hintBtn'),next:$('#newBtn'),xp:$('#xp'),streak:$('#streak'),
-  worldTitle:$('#worldTitle'),worldText:$('#worldText'),worldFill:$('#worldFill')
+  worldPanel:$('#worldPanel'),worldTitle:$('#worldTitle'),worldText:$('#worldText'),worldFill:$('#worldFill'),
+  worldPct:$('#worldPct'),sound:$('#soundToggle')
 };
 
-function init(){renderDifficulties();renderCategories();bind();refreshStats();renderWorld()}
+function init(){
+  applyTheme(progress.theme||'day');
+  renderDifficulties();
+  renderCategories();
+  bind();
+  refreshStats();
+  renderWorld();
+  refreshSoundButton();
+}
 function bind(){
-  ui.back.onclick=()=>{ui.panel.classList.add('hidden');selected=null};
+  ui.back.onclick=()=>{ui.panel.classList.add('hidden');selected=null;renderWorld()};
   ui.hint.onclick=()=>handleHelpAction();
   ui.next.onclick=()=>newTask();
+  ui.sound.onclick=()=>{
+    progress.sound=!progress.sound;
+    saveProgress(progress);
+    refreshSoundButton();
+    if(progress.sound) playHint();
+  };
+  $$('[data-theme-btn]').forEach(btn=>btn.onclick=()=>setTheme(btn.dataset.themeBtn));
+  $$('[data-world-category]').forEach(btn=>btn.onclick=()=>openCategory(btn.dataset.worldCategory));
+}
+function setTheme(theme){
+  progress.theme=theme;
+  saveProgress(progress);
+  applyTheme(theme);
+}
+function applyTheme(theme){
+  document.body.dataset.theme=theme;
+  $$('[data-theme-btn]').forEach(b=>b.classList.toggle('active',b.dataset.themeBtn===theme));
+}
+function refreshSoundButton(){
+  ui.sound.textContent=progress.sound?'🔊':'🔇';
+  ui.sound.title=progress.sound?'Zvuky jsou zapnuté':'Zvuky jsou vypnuté';
+}
+function sound(fn){
+  if(progress.sound) fn();
 }
 function renderDifficulties(){
   ui.switch.innerHTML='';
   Object.entries(difficultyMeta).forEach(([key,m])=>{
     const b=document.createElement('button');
-    b.textContent=m.label;b.title=m.desc;b.classList.toggle('active',key===difficulty);
+    b.textContent=m.label;b.title=m.detail;b.classList.toggle('active',key===difficulty);
     b.onclick=()=>{difficulty=key;renderDifficulties();if(selected)newTask()};
     ui.switch.appendChild(b);
   });
@@ -50,6 +86,7 @@ function openCategory(key){
   selected=key;
   ui.panel.classList.remove('hidden');
   newTask();
+  renderWorld();
   ui.panel.scrollIntoView({behavior:'smooth',block:'start'});
 }
 function resetAttemptState(){
@@ -99,17 +136,38 @@ function renderAnswer(){
 function check(value){
   if(solutionShown) return;
   progress.totalAttempts++;
+  if(selected) progress.byCategory[selected].attempts++;
 
   if(equal(Number(value),Number(task.answer))){
+    const before=worldState(progress);
     progress.totalCorrect++;
     progress.streak++;
+    if(selected) progress.byCategory[selected].correct++;
     progress.xp+=difficulty==='easy'?10:difficulty==='medium'?18:difficulty==='hard'?28:40;
-    showFeedback('good',attempts===0
-      ? 'Správně!'
-      : 'Správně. Teď už to sedí.');
+    const after=worldState(progress);
+
+    const phaseBefore=selected?before.states[selected].phase:0;
+    const phaseAfter=selected?after.states[selected].phase:0;
+    const unlocked=phaseAfter>phaseBefore;
+
+    showFeedback('good',attempts===0?'Správně!':'Správně. Teď už to sedí.');
     ui.hint.hidden=true;
-    saveProgress(progress);refreshStats();renderWorld();
-    setTimeout(newTask,900);
+    saveProgress(progress);
+    refreshStats();
+    renderWorld();
+
+    if(unlocked){
+      sound(playUnlock);
+      animateWorld('flash-unlock');
+    }else if(progress.streak>0 && progress.streak%5===0){
+      sound(playStreak);
+      animateWorld('flash-unlock');
+    }else{
+      sound(playCorrect);
+      animateWorld('flash-good');
+    }
+
+    setTimeout(newTask,unlocked?1300:900);
     return;
   }
 
@@ -117,6 +175,7 @@ function check(value){
   progress.streak=0;
   saveProgress(progress);
   refreshStats();
+  sound(playWrong);
 
   if(attempts===1){
     ui.hint.hidden=true;
@@ -143,11 +202,11 @@ function handleHelpAction(){
     revealSolution();
     return;
   }
-
   if(attempts<2 || hintUsed) return;
 
   hintUsed=true;
   ui.hint.hidden=true;
+  sound(playHint);
   showFeedback('bad',`Nápověda: ${task.hint||'Převeď veličiny do stejných jednotek a zkontroluj vztah mezi nimi.'}`);
   focusAnswer();
 }
@@ -171,12 +230,35 @@ function showFeedback(kind,text){
   ui.feedback.className=`feedback ${kind}`;
   ui.feedback.textContent=text;
 }
-function refreshStats(){ui.xp.textContent=progress.xp;ui.streak.textContent=progress.streak}
+function refreshStats(){
+  ui.xp.textContent=progress.xp;
+  ui.streak.textContent=progress.streak;
+}
 function renderWorld(){
-  const w=worldState(progress.totalCorrect);
+  const w=worldState(progress);
   ui.worldTitle.textContent=w.title;
   ui.worldText.textContent=w.text;
   ui.worldFill.style.width=`${w.pct}%`;
+  ui.worldPct.textContent=`${w.pct} %`;
+
+  Object.entries(w.states).forEach(([key,state])=>{
+    const el=document.querySelector(`[data-world-category="${key}"]`);
+    if(!el) return;
+    el.classList.remove('phase-0','phase-1','phase-2','phase-3','phase-4','phase-5','active');
+    el.classList.add(`phase-${state.phase}`);
+    el.classList.toggle('active',selected===key);
+    const status=el.querySelector('.district-status');
+    const nextAt=Math.min(state.max,(state.phase+1)*10);
+    status.textContent=state.phase===5
+      ? `${state.label} • dokončeno`
+      : `${state.label} • ${state.correct}/${nextAt}`;
+  });
+}
+function animateWorld(cls){
+  ui.worldPanel.classList.remove('flash-good','flash-unlock');
+  void ui.worldPanel.offsetWidth;
+  ui.worldPanel.classList.add(cls);
+  setTimeout(()=>ui.worldPanel.classList.remove(cls),1000);
 }
 
 init();
