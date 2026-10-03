@@ -23,6 +23,7 @@ jobs:
           node --check js/progress.js
           node --check js/world.js
           node --check js/audio.js
+          node --check js/solutions.js
 
       - name: Validate generated tasks
         run: npm test
