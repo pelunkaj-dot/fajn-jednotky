@@ -20,6 +20,7 @@
         <button data-theme-btn="aurora" title="Polární svět">✨</button>
       </div>
       <button id="soundToggle" class="icon-btn" title="Zvuky">🔊</button>
+      <button id="parentBtn" class="parent-btn" type="button">Pro rodiče</button>
       <div class="stats">
         <span>XP <strong id="xp">0</strong></span>
         <span>Série <strong id="streak">0</strong></span>
@@ -141,6 +142,50 @@
         <button id="newBtn" class="primary">Nová úloha</button>
       </div>
     </section>
+
+    <div class="parent-panel hidden" id="parentPanel" role="dialog" aria-modal="true" aria-labelledby="parentTitle">
+      <div class="parent-card">
+        <div class="parent-head">
+          <div>
+            <div class="eyebrow">Přehled pro rodiče</div>
+            <h2 id="parentTitle">Jak se daří?</h2>
+            <p>Stručný přehled práce, obtížnosti a míst, kde je ještě potřeba procvičovat.</p>
+          </div>
+          <button id="parentCloseBtn" class="icon-btn" type="button" aria-label="Zavřít">✕</button>
+        </div>
+
+        <div class="parent-summary" id="parentSummary"></div>
+
+        <section class="parent-section">
+          <div class="parent-section-head">
+            <div>
+              <div class="eyebrow">Oblasti</div>
+              <h3>Co jde a co potřebuje trénink</h3>
+            </div>
+          </div>
+          <div id="parentCategories" class="parent-category-list"></div>
+        </section>
+
+        <section class="parent-section parent-grid-two">
+          <div>
+            <div class="eyebrow">Obtížnost</div>
+            <h3>Na jaké úrovni dítě pracuje</h3>
+            <div id="parentDifficulties" class="parent-difficulty-list"></div>
+          </div>
+          <div>
+            <div class="eyebrow">Podokruhy</div>
+            <h3>Co bych procvičil dál</h3>
+            <div id="parentTopics" class="parent-topic-list"></div>
+          </div>
+        </section>
+
+        <section class="parent-section">
+          <div class="eyebrow">Svět měření</div>
+          <h3>Postup ve světě</h3>
+          <div id="parentWorld" class="parent-world-list"></div>
+        </section>
+      </div>
+    </div>
 
     <div class="mission-complete hidden" id="missionComplete" role="dialog" aria-modal="true" aria-labelledby="missionCompleteTitle">
       <div class="mission-complete-card">
