@@ -54,3 +54,38 @@ export function worldState(progress){
 
   return {states,total,pct:Math.round(total/max*100),built,title,text};
 }
+
+
+export function missionState(key,correct=0){
+  const state=districtState(key,correct);
+  if(state.phase>=6){
+    return {
+      complete:true,
+      key,
+      title:'Čtvrť je dokončená',
+      target:state.max,
+      start:state.max,
+      done:state.max,
+      remaining:0,
+      pct:100,
+      rewardXp:0,
+      unlockLabel:state.label
+    };
+  }
+  const start=state.phase*10;
+  const target=(state.phase+1)*10;
+  const done=Math.max(0,correct-start);
+  const remaining=Math.max(0,target-correct);
+  return {
+    complete:false,
+    key,
+    title:`Postav: ${state.nextLabel}`,
+    target,
+    start,
+    done,
+    remaining,
+    pct:Math.min(100,Math.round(done/10*100)),
+    rewardXp:50,
+    unlockLabel:state.nextLabel
+  };
+}
