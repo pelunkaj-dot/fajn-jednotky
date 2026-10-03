@@ -112,3 +112,25 @@ console.log('\nDidaktická sekvence odpovědí je řízena v js/app.js:');
 console.log('1. chyba -> pouze upozornění');
 console.log('2. chyba -> nabídka nápovědy');
 console.log('po nápovědě + další chyba -> nabídka zobrazení řešení');
+
+
+console.log('\nSUBTOPIC TESTS');
+for (const [catKey, category] of Object.entries(categories)) {
+  for (const topic of (category.subtopics || [])) {
+    if (topic.id === 'all') continue;
+    const levels = topic.levels || levels;
+    for (const level of levels) {
+      try {
+        const sample = pickTask(category, level, '', topic.id);
+        if (!sample?.q) {
+          fail(`${catKey}/${topic.id}/${level}`, 'Podokruh nevygeneroval zadání.');
+        }
+        if (topic.match && !topic.match(sample)) {
+          fail(`${catKey}/${topic.id}/${level}`, 'Vygenerovaná úloha neodpovídá filtru podokruhu.', sample);
+        }
+      } catch (err) {
+        fail(`${catKey}/${topic.id}/${level}`, `Podokruh selhal: ${err.message}`);
+      }
+    }
+  }
+}
