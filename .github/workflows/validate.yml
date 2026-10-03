@@ -17,5 +17,12 @@ jobs:
         with:
           node-version: 22
 
+      - name: Check application syntax
+        run: |
+          node --check js/app.js
+          node --check js/progress.js
+          node --check js/world.js
+          node --check js/audio.js
+
       - name: Validate generated tasks
         run: npm test
