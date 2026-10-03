@@ -31,8 +31,8 @@ export const categories={
     name:'Objem',icon:'🧪',desc:'Krychlové jednotky, litry a praktické nádoby.',tasks:volumeTasks,
     subtopics:[
       {id:'all',label:'Vše'},
-      {id:'liquids',label:'Litry a kapaliny',levels:['easy','medium','hard','challenge'],match:t=>has(t,/\b(ml|cl|dl|l|hl)\b|litr/i)&&!has(t,/akvári|nádrž|nádob|bazén|krabic|sud|láhev/i)},
-      {id:'cubic',label:'Krychlové jednotky',levels:['easy','medium','hard'],match:t=>has(t,/cm³|dm³|m³/)&&!has(t,/akvári|nádrž|nádob|bazén|krabic/i)},
+      {id:'liquids',label:'Litry a kapaliny',levels:['easy','medium'],match:t=>has(t,/\b(ml|cl|dl|l|hl)\b|litr/i)&&!has(t,/akvári|nádrž|nádob|bazén|krabic|sud|láhev/i)},
+      {id:'cubic',label:'Krychlové jednotky',levels:['easy','medium'],match:t=>has(t,/cm³|dm³|m³/)&&!has(t,/akvári|nádrž|nádob|bazén|krabic/i)},
       {id:'containers',label:'Nádoby a akvária',levels:['hard','challenge'],match:t=>has(t,/akvári|nádrž|nádob|bazén|krabic|sud|láhev/i)}
     ]
   },
