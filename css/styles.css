@@ -106,3 +106,22 @@ body[data-theme="night"] .cloud{opacity:.16}.river{position:absolute;left:-5%;ri
   .parent-world-row{grid-template-columns:1fr auto}
   .parent-world-row .parent-world-bar{grid-column:1/-1}
 }
+
+.mission-result-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px;margin:18px 0 10px}
+.mission-result-stat{padding:12px;border:1px solid var(--border);background:var(--panel2);border-radius:16px;text-align:left}
+.mission-result-stat strong{display:block;font-size:1.15rem}
+.mission-result-stat span{display:block;margin-top:3px;color:var(--muted);font-size:.78rem}
+.mission-result-note{margin:4px 0 12px;color:var(--muted);font-weight:700}
+.parent-mission-list{display:grid;gap:10px}
+.parent-mission{display:grid;grid-template-columns:minmax(180px,1.4fr) repeat(4,auto);gap:10px;align-items:center;padding:12px 14px;border:1px solid var(--border);border-radius:16px;background:var(--panel2)}
+.parent-mission>div strong,.parent-mission>div small{display:block}
+.parent-mission>div small{margin-top:3px;color:var(--muted)}
+.parent-mission>span{font-size:.82rem;font-weight:800;white-space:nowrap}
+@media(max-width:760px){
+  .mission-result-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .parent-mission{grid-template-columns:1fr 1fr}
+  .parent-mission>div{grid-column:1/-1}
+}
+@media(max-width:460px){
+  .mission-result-grid{grid-template-columns:1fr}
+}
