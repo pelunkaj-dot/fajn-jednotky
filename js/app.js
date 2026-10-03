@@ -30,7 +30,9 @@ const ui={
   missionCompleteTitle:$('#missionCompleteTitle'),missionCompleteText:$('#missionCompleteText'),
   missionResultGrid:$('#missionResultGrid'),missionResultNote:$('#missionResultNote'),missionReward:$('#missionReward'),
   missionWorldBtn:$('#missionWorldBtn'),missionAgainBtn:$('#missionAgainBtn'),
-  parentBtn:$('#parentBtn'),parentPanel:$('#parentPanel'),parentCloseBtn:$('#parentCloseBtn'),
+  parentBtn:$('#parentBtn'),parentPanel:$('#parentPanel'),parentCloseBtn:$('#parentCloseBtn'),parentChangePinBtn:$('#parentChangePinBtn'),
+  parentAuth:$('#parentAuth'),parentAuthTitle:$('#parentAuthTitle'),parentAuthText:$('#parentAuthText'),parentPinInput:$('#parentPinInput'),
+  parentPinConfirmInput:$('#parentPinConfirmInput'),parentAuthError:$('#parentAuthError'),parentAuthCancelBtn:$('#parentAuthCancelBtn'),parentAuthSubmitBtn:$('#parentAuthSubmitBtn'),
   parentSummary:$('#parentSummary'),parentCategories:$('#parentCategories'),
   parentDifficulties:$('#parentDifficulties'),parentTopics:$('#parentTopics'),parentMissions:$('#parentMissions'),parentWorld:$('#parentWorld')
 };
@@ -58,9 +60,17 @@ function bind(){
   $$('[data-world-category]').forEach(btn=>btn.onclick=()=>openCategory(btn.dataset.worldCategory));
   ui.missionWorldBtn.onclick=()=>closeMissionComplete(true);
   ui.missionAgainBtn.onclick=()=>closeMissionComplete(false);
-  ui.parentBtn.onclick=openParentPanel;
+  ui.parentBtn.onclick=beginParentAccess;
   ui.parentCloseBtn.onclick=closeParentPanel;
+  ui.parentChangePinBtn.onclick=()=>openParentAuth('change');
   ui.parentPanel.addEventListener('click',e=>{if(e.target===ui.parentPanel) closeParentPanel()});
+  ui.parentAuthCancelBtn.onclick=closeParentAuth;
+  ui.parentAuthSubmitBtn.onclick=submitParentAuth;
+  ui.parentAuth.addEventListener('click',e=>{if(e.target===ui.parentAuth) closeParentAuth()});
+  ui.parentPinInput.addEventListener('input',cleanPinInput);
+  ui.parentPinConfirmInput.addEventListener('input',cleanPinInput);
+  ui.parentPinInput.addEventListener('keydown',e=>{if(e.key==='Enter')submitParentAuth()});
+  ui.parentPinConfirmInput.addEventListener('keydown',e=>{if(e.key==='Enter')submitParentAuth()});
 }
 function setTheme(theme){
   progress.theme=theme;
@@ -441,6 +451,96 @@ function pct(correct,attempts){
 }
 function safeText(value){
   return String(value).replace(/[&<>"']/g,ch=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[ch]));
+}
+let parentAuthMode='login';
+
+function cleanPinInput(e){
+  e.target.value=e.target.value.replace(/\D/g,'').slice(0,4);
+}
+async function hashPin(pin){
+  const bytes=new TextEncoder().encode(pin);
+  const digest=await crypto.subtle.digest('SHA-256',bytes);
+  return [...new Uint8Array(digest)].map(b=>b.toString(16).padStart(2,'0')).join('');
+}
+function beginParentAccess(){
+  if(progress.parentPinHash){
+    openParentAuth('login');
+  }else{
+    openParentAuth('setup');
+  }
+}
+function openParentAuth(mode){
+  parentAuthMode=mode;
+  ui.parentPinInput.value='';
+  ui.parentPinConfirmInput.value='';
+  ui.parentAuthError.classList.add('hidden');
+  ui.parentAuthError.textContent='';
+
+  if(mode==='setup'){
+    ui.parentAuthTitle.textContent='Nastav rodičovský PIN';
+    ui.parentAuthText.textContent='Zvol 4 číslice. Tento PIN bude chránit rodičovský přehled.';
+    ui.parentPinConfirmInput.classList.remove('hidden');
+    ui.parentAuthSubmitBtn.textContent='Nastavit PIN';
+  }else if(mode==='change'){
+    ui.parentAuthTitle.textContent='Změnit rodičovský PIN';
+    ui.parentAuthText.textContent='Zadej nový 4místný PIN a potvrď ho podruhé.';
+    ui.parentPinConfirmInput.classList.remove('hidden');
+    ui.parentAuthSubmitBtn.textContent='Uložit nový PIN';
+  }else{
+    ui.parentAuthTitle.textContent='Zadej rodičovský PIN';
+    ui.parentAuthText.textContent='Rodičovský přehled je chráněný.';
+    ui.parentPinConfirmInput.classList.add('hidden');
+    ui.parentAuthSubmitBtn.textContent='Odemknout';
+  }
+
+  ui.parentPanel.classList.add('hidden');
+  ui.parentAuth.classList.remove('hidden');
+  document.body.classList.add('modal-open');
+  setTimeout(()=>ui.parentPinInput.focus(),50);
+}
+function closeParentAuth(){
+  ui.parentAuth.classList.add('hidden');
+  document.body.classList.remove('modal-open');
+}
+function showParentAuthError(message){
+  ui.parentAuthError.textContent=message;
+  ui.parentAuthError.classList.remove('hidden');
+}
+async function submitParentAuth(){
+  const pin=ui.parentPinInput.value.trim();
+  const confirm=ui.parentPinConfirmInput.value.trim();
+
+  if(!/^\d{4}$/.test(pin)){
+    showParentAuthError('PIN musí mít přesně 4 číslice.');
+    return;
+  }
+
+  if(parentAuthMode==='login'){
+    const hash=await hashPin(pin);
+    if(hash!==progress.parentPinHash){
+      showParentAuthError('PIN není správný.');
+      ui.parentPinInput.select();
+      return;
+    }
+    ui.parentAuth.classList.add('hidden');
+    openParentPanel();
+    return;
+  }
+
+  if(pin!==confirm){
+    showParentAuthError('Oba zadané PINy musí být stejné.');
+    return;
+  }
+
+  progress.parentPinHash=await hashPin(pin);
+  saveProgress(progress);
+  ui.parentAuth.classList.add('hidden');
+
+  if(parentAuthMode==='change'){
+    openParentPanel();
+  }else{
+    openParentPanel();
+  }
 }
 function openParentPanel(){
   renderParentPanel();
