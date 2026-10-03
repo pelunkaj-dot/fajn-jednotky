@@ -5,12 +5,22 @@ export const difficultyMeta={
   challenge:{label:'Výzva',desc:'Pro dvojkaře, kteří chtějí jedničku.',detail:'Převod jednotek je jen jedna část řešení. Úloha prověří skutečné porozumění.'}
 };
 
+function materialize(item){
+  return typeof item==='function' ? item() : structuredClone(item);
+}
+
 export function pickTask(category,difficulty,previousQuestion=''){
   const list=category.tasks[difficulty]||[];
   if(!list.length) throw new Error('Pro zvolenou obtížnost nejsou připravené úlohy.');
-  const candidates=list.length>1?list.filter(item=>item.q!==previousQuestion):list;
-  return structuredClone(candidates[Math.floor(Math.random()*candidates.length)]);
+
+  let candidate=null;
+  for(let attempt=0;attempt<24;attempt++){
+    candidate=materialize(list[Math.floor(Math.random()*list.length)]);
+    if(candidate && candidate.q && candidate.q!==previousQuestion) return candidate;
+  }
+  return candidate || materialize(list[0]);
 }
+
 export function parseAnswer(raw){
   return Number(String(raw).trim().replace(',','.').replace(/\s+/g,''));
 }
