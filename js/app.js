@@ -192,14 +192,13 @@ function currentMissionRun(){
   const m=missionState(selected,progress.byCategory[selected].correct);
   return ensureMissionRun(progress,selected,m.target);
 }
-function registerAttempt(){
+function registerAttempt(run){
   progress.totalAttempts++;
   if(selected) progress.byCategory[selected].attempts++;
   progress.byDifficulty[difficulty].attempts++;
   const topic=currentTopicStats();
   if(topic) topic.attempts++;
 
-  const run=currentMissionRun();
   if(run){
     run.attempts++;
     run.byDifficulty[difficulty]=(run.byDifficulty[difficulty]||0)+1;
@@ -207,7 +206,7 @@ function registerAttempt(){
     run.byTopic[topicKey]=(run.byTopic[topicKey]||0)+1;
   }
 }
-function registerCorrect(firstTry){
+function registerCorrect(firstTry,run){
   progress.totalCorrect++;
   progress.streak++;
   if(selected) progress.byCategory[selected].correct++;
@@ -215,7 +214,6 @@ function registerCorrect(firstTry){
   const topic=currentTopicStats();
   if(topic) topic.correct++;
 
-  const run=currentMissionRun();
   if(run){
     run.correct++;
     if(firstTry) run.firstTry++;
@@ -229,13 +227,14 @@ function registerCorrect(firstTry){
 }
 function check(value){
   if(solutionShown) return;
-  registerAttempt();
+  const missionRun=currentMissionRun();
+  registerAttempt(missionRun);
 
   if(equal(Number(value),Number(task.answer))){
     const before=worldState(progress);
     const beforeMission=selected?missionState(selected,progress.byCategory[selected].correct):null;
     const firstTry=attempts===0;
-    registerCorrect(firstTry);
+    registerCorrect(firstTry,missionRun);
     progress.xp+=difficulty==='easy'?10:difficulty==='medium'?18:difficulty==='hard'?28:40;
     const after=worldState(progress);
     const afterMission=selected?missionState(selected,progress.byCategory[selected].correct):null;
