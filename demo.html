@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FajnJednotky – demo</title>
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body data-theme="day" data-demo="true">
+  <div class="demo-ribbon">
+    <div><strong>DEMO FajnJednotky</strong><span>Vyzkoušej 15 úloh napříč celým světem.</span></div>
+    <div class="demo-ribbon-actions">
+      <span id="demoCounter">0 / 15</span>
+      <a href="https://fajndoucko.cz/fajncvicebna/" class="demo-full-link">Chci plnou verzi</a>
+    </div>
+  </div>
+
+  <header class="topbar">
+    <div>
+      <div class="eyebrow">FajnCvičebna</div>
+      <h1>FajnJednotky</h1>
+      <p>Převody od základů až po úlohy pro dvojkaře, kteří chtějí jedničku.</p>
+    </div>
+    <div class="top-actions">
+      <div class="theme-switch" aria-label="Vzhled světa">
+        <button data-theme-btn="day" title="Denní svět">☀️</button>
+        <button data-theme-btn="night" title="Noční svět">🌙</button>
+        <button data-theme-btn="aurora" title="Polární svět">✨</button>
+      </div>
+      <button id="soundToggle" class="icon-btn" title="Zvuky">🔊</button>
+      <button id="parentBtn" class="parent-btn" type="button">Pro rodiče</button>
+      <div class="stats">
+        <span>XP <strong id="xp">0</strong></span>
+        <span>Série <strong id="streak">0</strong></span>
+      </div>
+    </div>
+  </header>
+
+  <main class="shell">
+    <section class="world-stage card" id="worldPanel">
+      <div class="world-head">
+        <div>
+          <div class="eyebrow">Svět měření</div>
+          <h2 id="worldTitle">Základna měření</h2>
+          <p id="worldText">Pět čtvrtí čeká, až je postupně postavíš.</p>
+        </div>
+        <div class="world-total"><span id="worldPct">0 %</span><small>vybudováno</small></div>
+      </div>
+
+      <div class="world-scene" id="worldScene">
+        <div class="sky-orb"></div>
+        <div class="cloud cloud-a"></div>
+        <div class="cloud cloud-b"></div>
+        <div class="river"></div>
+        <div class="roads"></div>
+
+        <button class="district district-length" data-world-category="length">
+          <span class="district-icon">📏</span>
+          <span class="district-name">Čtvrť délek</span>
+          <span class="district-objects">
+            <i class="obj road-segment"></i><i class="obj bridge"></i><i class="obj station"></i><i class="obj tower"></i><i class="obj lights"></i><i class="obj tram"></i>
+          </span>
+          <span class="district-status"></span>
+        </button>
+
+        <button class="district district-area" data-world-category="area">
+          <span class="district-icon">🌳</span>
+          <span class="district-name">Čtvrť plochy</span>
+          <span class="district-objects">
+            <i class="obj beds"></i><i class="obj park"></i><i class="obj field"></i><i class="obj homes"></i><i class="obj square"></i><i class="obj greenhouse"></i>
+          </span>
+          <span class="district-status"></span>
+        </button>
+
+        <button class="district district-volume" data-world-category="volume">
+          <span class="district-icon">💧</span>
+          <span class="district-name">Vodní čtvrť</span>
+          <span class="district-objects">
+            <i class="obj well"></i><i class="obj tank"></i><i class="obj pipes"></i><i class="obj pool"></i><i class="obj waterworks"></i><i class="obj fountain"></i>
+          </span>
+          <span class="district-status"></span>
+        </button>
+
+        <button class="district district-time" data-world-category="time">
+          <span class="district-icon">🕰️</span>
+          <span class="district-name">Časová čtvrť</span>
+          <span class="district-objects">
+            <i class="obj street-clock"></i><i class="obj stop"></i><i class="obj station-clock"></i><i class="obj time-tower"></i><i class="obj signals"></i><i class="obj chrono"></i>
+          </span>
+          <span class="district-status"></span>
+        </button>
+
+        <button class="district district-mass" data-world-category="mass">
+          <span class="district-icon">⚖️</span>
+          <span class="district-name">Přístav a sklady</span>
+          <span class="district-objects">
+            <i class="obj warehouse-small"></i><i class="obj scale"></i><i class="obj ramp"></i><i class="obj crane"></i><i class="obj hall"></i><i class="obj logistics"></i>
+          </span>
+          <span class="district-status"></span>
+        </button>
+
+        <div class="world-center">
+          <div class="world-beacon">✦</div>
+          <strong>Centrum jednotek</strong>
+        </div>
+      </div>
+
+      <div class="world-progress"><div id="worldFill"></div></div>
+    </section>
+
+    <section class="hero card">
+      <div>
+        <span class="pill">Ukázkový trénink</span>
+        <h2>Vyber oblast</h2>
+        <p>Vyzkoušej všech pět oblastí i čtyři obtížnosti. Demo umožní 15 správných úloh, nejvýše 5 v jedné oblasti.</p>
+      </div>
+      <div class="difficulty-switch" id="difficultySwitch" aria-label="Obtížnost"></div>
+    </section>
+
+    <section id="categoryGrid" class="category-grid"></section>
+
+    <section id="exercisePanel" class="exercise card hidden">
+      <div class="exercise-head">
+        <button id="backBtn" class="ghost">← Zpět</button>
+        <div>
+          <div class="eyebrow" id="exerciseMeta"></div>
+          <h2 id="exerciseTitle">Úloha</h2>
+        </div>
+        <span id="difficultyBadge" class="pill"></span>
+      </div>
+
+      <div id="topicFilters" class="topic-filters" aria-label="Podokruh"></div>
+
+      <div class="mission-bar" id="missionBar">
+        <div>
+          <span class="mission-kicker">Aktuální mise</span>
+          <strong id="missionTitle">Postav další část světa</strong>
+        </div>
+        <div class="mission-progress-wrap">
+          <span id="missionProgressText">0 / 10</span>
+          <div class="mission-progress"><div id="missionProgressFill"></div></div>
+        </div>
+      </div>
+
+      <div class="question" id="questionText"></div>
+      <div id="answerArea"></div>
+      <div id="feedback" class="feedback hidden"></div>
+      <div class="exercise-actions">
+        <button id="hintBtn" class="ghost">Nápověda</button>
+        <button id="newBtn" class="primary">Nová úloha</button>
+      </div>
+    </section>
+
+    <div class="parent-auth hidden" id="parentAuth" role="dialog" aria-modal="true" aria-labelledby="parentAuthTitle">
+      <div class="parent-auth-card">
+        <div class="eyebrow">Rodičovská část</div>
+        <h2 id="parentAuthTitle">Zadej rodičovský PIN</h2>
+        <p id="parentAuthText">Zadej 4místný PIN.</p>
+        <input id="parentPinInput" class="parent-pin-input" inputmode="numeric" maxlength="4" autocomplete="one-time-code" aria-label="Rodičovský PIN">
+        <input id="parentPinConfirmInput" class="parent-pin-input hidden" inputmode="numeric" maxlength="4" autocomplete="one-time-code" aria-label="Potvrzení rodičovského PINu">
+        <div id="parentAuthError" class="parent-auth-error hidden"></div>
+        <div class="parent-auth-actions">
+          <button id="parentAuthCancelBtn" class="ghost" type="button">Zrušit</button>
+          <button id="parentAuthSubmitBtn" class="primary" type="button">Pokračovat</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="parent-panel hidden" id="parentPanel" role="dialog" aria-modal="true" aria-labelledby="parentTitle">
+      <div class="parent-card">
+        <div class="parent-head">
+          <div>
+            <div class="eyebrow">Přehled pro rodiče</div>
+            <h2 id="parentTitle">Jak se daří?</h2>
+            <p>Stručný přehled práce, obtížnosti a míst, kde je ještě potřeba procvičovat.</p>
+          </div>
+          <div class="parent-head-actions">
+            <button id="parentChangePinBtn" class="ghost parent-pin-change" type="button">Změnit PIN</button>
+            <button id="parentCloseBtn" class="icon-btn" type="button" aria-label="Zavřít">✕</button>
+          </div>
+        </div>
+
+        <div class="parent-summary" id="parentSummary"></div>
+
+        <section class="parent-section">
+          <div class="parent-section-head">
+            <div>
+              <div class="eyebrow">Oblasti</div>
+              <h3>Co jde a co potřebuje trénink</h3>
+            </div>
+          </div>
+          <div id="parentCategories" class="parent-category-list"></div>
+        </section>
+
+        <section class="parent-section parent-grid-two">
+          <div>
+            <div class="eyebrow">Obtížnost</div>
+            <h3>Na jaké úrovni dítě pracuje</h3>
+            <div id="parentDifficulties" class="parent-difficulty-list"></div>
+          </div>
+          <div>
+            <div class="eyebrow">Podokruhy</div>
+            <h3>Co bych procvičil dál</h3>
+            <div id="parentTopics" class="parent-topic-list"></div>
+          </div>
+        </section>
+
+        <section class="parent-section">
+          <div class="eyebrow">Poslední mise</div>
+          <h3>Jak dopadly poslední série</h3>
+          <div id="parentMissions" class="parent-mission-list"></div>
+        </section>
+
+        <section class="parent-section">
+          <div class="eyebrow">Svět měření</div>
+          <h3>Postup ve světě</h3>
+          <div id="parentWorld" class="parent-world-list"></div>
+        </section>
+      </div>
+    </div>
+
+    <div class="demo-parent-info hidden" id="demoParentInfo" role="dialog" aria-modal="true" aria-labelledby="demoParentInfoTitle">
+      <div class="demo-info-card">
+        <div class="eyebrow">Plná verze</div>
+        <h2 id="demoParentInfoTitle">Co vidí rodič?</h2>
+        <p>V plné FajnJednotky je rodičovská část chráněná vlastním 4místným PINem.</p>
+        <div class="demo-parent-points">
+          <span>✓ úspěšnost a první pokusy</span>
+          <span>✓ nápovědy a zobrazená řešení</span>
+          <span>✓ silné a slabší oblasti i podokruhy</span>
+          <span>✓ historie misí a postup ve světě</span>
+        </div>
+        <div class="demo-info-actions">
+          <button id="demoParentClose" class="ghost" type="button">Zavřít</button>
+          <a class="primary demo-anchor" href="https://fajndoucko.cz/fajncvicebna/">Chci plnou verzi</a>
+        </div>
+      </div>
+    </div>
+
+    <div class="demo-end hidden" id="demoEnd" role="dialog" aria-modal="true" aria-labelledby="demoEndTitle">
+      <div class="demo-end-card">
+        <div class="mission-burst">✦</div>
+        <div class="eyebrow">Ukázka dokončena</div>
+        <h2 id="demoEndTitle">Teď už víš, jak FajnJednotky fungují</h2>
+        <p id="demoEndText">Vyzkoušel jsi převody, různé obtížnosti, nápovědu, řešení i růst světa.</p>
+        <div id="demoEndStats" class="demo-end-stats"></div>
+        <div class="demo-info-actions">
+          <button id="demoResetBtn" class="ghost" type="button">Spustit demo znovu</button>
+          <a class="primary demo-anchor" href="https://fajndoucko.cz/fajncvicebna/">Chci plnou verzi</a>
+        </div>
+      </div>
+    </div>
+
+    <div class="mission-complete hidden" id="missionComplete" role="dialog" aria-modal="true" aria-labelledby="missionCompleteTitle">
+      <div class="mission-complete-card">
+        <div class="mission-burst">✦</div>
+        <div class="eyebrow">Mise splněna</div>
+        <h2 id="missionCompleteTitle">Nová část světa je hotová!</h2>
+        <p id="missionCompleteText"></p>
+        <div class="mission-result-grid" id="missionResultGrid"></div>
+        <div class="mission-result-note" id="missionResultNote"></div>
+        <div class="mission-reward" id="missionReward">+50 XP</div>
+        <div class="mission-complete-actions">
+          <button class="ghost" id="missionWorldBtn">Podívat se do světa</button>
+          <button class="primary" id="missionAgainBtn">Další mise</button>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>
