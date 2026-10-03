@@ -1,6 +1,6 @@
 import { categories } from '../data/categories.js';
 import { difficultyMeta,pickTask,parseAnswer,equal } from './core.js';
-import { loadProgress,saveProgress } from './progress.js';
+import { loadProgress,saveProgress,ensureTopicStats } from './progress.js';
 import { worldState, missionState } from './world.js';
 import { playCorrect,playWrong,playHint,playStreak,playUnlock } from './audio.js';
 
@@ -27,7 +27,10 @@ const ui={
   missionBar:$('#missionBar'),missionTitle:$('#missionTitle'),missionProgressText:$('#missionProgressText'),
   missionProgressFill:$('#missionProgressFill'),missionComplete:$('#missionComplete'),
   missionCompleteTitle:$('#missionCompleteTitle'),missionCompleteText:$('#missionCompleteText'),
-  missionReward:$('#missionReward'),missionWorldBtn:$('#missionWorldBtn'),missionAgainBtn:$('#missionAgainBtn')
+  missionReward:$('#missionReward'),missionWorldBtn:$('#missionWorldBtn'),missionAgainBtn:$('#missionAgainBtn'),
+  parentBtn:$('#parentBtn'),parentPanel:$('#parentPanel'),parentCloseBtn:$('#parentCloseBtn'),
+  parentSummary:$('#parentSummary'),parentCategories:$('#parentCategories'),
+  parentDifficulties:$('#parentDifficulties'),parentTopics:$('#parentTopics'),parentWorld:$('#parentWorld')
 };
 
 function init(){
@@ -49,10 +52,13 @@ function bind(){
     refreshSoundButton();
     if(progress.sound) playHint();
   };
-  $('[data-theme-btn]').forEach(btn=>btn.onclick=()=>setTheme(btn.dataset.themeBtn));
-  $('[data-world-category]').forEach(btn=>btn.onclick=()=>openCategory(btn.dataset.worldCategory));
+  $$('[data-theme-btn]').forEach(btn=>btn.onclick=()=>setTheme(btn.dataset.themeBtn));
+  $$('[data-world-category]').forEach(btn=>btn.onclick=()=>openCategory(btn.dataset.worldCategory));
   ui.missionWorldBtn.onclick=()=>closeMissionComplete(true);
   ui.missionAgainBtn.onclick=()=>closeMissionComplete(false);
+  ui.parentBtn.onclick=openParentPanel;
+  ui.parentCloseBtn.onclick=closeParentPanel;
+  ui.parentPanel.addEventListener('click',e=>{if(e.target===ui.parentPanel) closeParentPanel()});
 }
 function setTheme(theme){
   progress.theme=theme;
@@ -177,17 +183,39 @@ function renderAnswer(){
   inp.addEventListener('keydown',e=>{if(e.key==='Enter')check(parseAnswer(inp.value))});
   setTimeout(()=>inp.focus(),30);
 }
-function check(value){
-  if(solutionShown) return;
+function currentTopicStats(){
+  return selected?ensureTopicStats(progress,selected,selectedTopic):null;
+}
+function registerAttempt(){
   progress.totalAttempts++;
   if(selected) progress.byCategory[selected].attempts++;
+  progress.byDifficulty[difficulty].attempts++;
+  const topic=currentTopicStats();
+  if(topic) topic.attempts++;
+}
+function registerCorrect(firstTry){
+  progress.totalCorrect++;
+  progress.streak++;
+  if(selected) progress.byCategory[selected].correct++;
+  progress.byDifficulty[difficulty].correct++;
+  const topic=currentTopicStats();
+  if(topic) topic.correct++;
+
+  if(firstTry){
+    progress.firstTryCorrect++;
+    if(selected) progress.byCategory[selected].firstTry++;
+    if(topic) topic.firstTry++;
+  }
+}
+function check(value){
+  if(solutionShown) return;
+  registerAttempt();
 
   if(equal(Number(value),Number(task.answer))){
     const before=worldState(progress);
     const beforeMission=selected?missionState(selected,progress.byCategory[selected].correct):null;
-    progress.totalCorrect++;
-    progress.streak++;
-    if(selected) progress.byCategory[selected].correct++;
+    const firstTry=attempts===0;
+    registerCorrect(firstTry);
     progress.xp+=difficulty==='easy'?10:difficulty==='medium'?18:difficulty==='hard'?28:40;
     const after=worldState(progress);
     const afterMission=selected?missionState(selected,progress.byCategory[selected].correct):null;
@@ -196,7 +224,7 @@ function check(value){
     const phaseAfter=selected?after.states[selected].phase:0;
     const unlocked=phaseAfter>phaseBefore;
 
-    showFeedback('good',attempts===0?'Správně!':'Správně. Teď už to sedí.');
+    showFeedback('good',firstTry?'Správně!':'Správně. Teď už to sedí.');
     ui.hint.hidden=true;
     saveProgress(progress);
     refreshStats();
@@ -261,6 +289,12 @@ function handleHelpAction(){
   if(attempts<2 || hintUsed) return;
 
   hintUsed=true;
+  progress.hintsUsed++;
+  if(selected) progress.byCategory[selected].hints++;
+  const topic=currentTopicStats();
+  if(topic) topic.hints++;
+  saveProgress(progress);
+
   ui.hint.hidden=true;
   sound(playHint);
   showFeedback('bad',`Nápověda: ${task.hint||'Převeď veličiny do stejných jednotek a zkontroluj vztah mezi nimi.'}`);
@@ -268,6 +302,12 @@ function handleHelpAction(){
 }
 function revealSolution(){
   solutionShown=true;
+  progress.solutionsShown++;
+  if(selected) progress.byCategory[selected].solutions++;
+  const topic=currentTopicStats();
+  if(topic) topic.solutions++;
+  saveProgress(progress);
+
   ui.hint.hidden=true;
   disableAnswer();
 
@@ -339,6 +379,75 @@ function animateWorld(cls){
   void ui.worldPanel.offsetWidth;
   ui.worldPanel.classList.add(cls);
   setTimeout(()=>ui.worldPanel.classList.remove(cls),1000);
+}
+function pct(correct,attempts){
+  return attempts?Math.round(correct/attempts*100):0;
+}
+function safeText(value){
+  return String(value).replace(/[&<>"']/g,ch=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[ch]));
+}
+function openParentPanel(){
+  renderParentPanel();
+  ui.parentPanel.classList.remove('hidden');
+  document.body.classList.add('modal-open');
+}
+function closeParentPanel(){
+  ui.parentPanel.classList.add('hidden');
+  document.body.classList.remove('modal-open');
+}
+function renderParentPanel(){
+  const accuracy=pct(progress.totalCorrect,progress.totalAttempts);
+  const firstTry=pct(progress.firstTryCorrect,progress.totalCorrect);
+  ui.parentSummary.innerHTML=[
+    ['Vyřešeno správně',progress.totalCorrect],
+    ['Úspěšnost pokusů',progress.totalAttempts?`${accuracy} %`:'—'],
+    ['Na první pokus',progress.totalCorrect?`${firstTry} %`:'—'],
+    ['Nápověda',progress.hintsUsed],
+    ['Zobrazené řešení',progress.solutionsShown]
+  ].map(([label,value])=>`<div class="parent-stat"><strong>${value}</strong><span>${label}</span></div>`).join('');
+
+  ui.parentCategories.innerHTML=Object.entries(categories).map(([key,cat])=>{
+    const s=progress.byCategory[key];
+    const a=pct(s.correct,s.attempts);
+    const confidence=s.attempts<5?'Málo dat':a>=75?'Daří se':a>=55?'Ještě procvičit':'Potřebuje pozornost';
+    return `<div class="parent-row">
+      <div class="parent-row-title"><span>${cat.icon}</span><strong>${safeText(cat.name)}</strong><small>${confidence}</small></div>
+      <div class="parent-row-bar"><i style="width:${Math.min(100,a)}%"></i></div>
+      <div class="parent-row-meta"><span>${s.correct} správně</span><span>${s.attempts} pokusů</span><span>${s.hints}× nápověda</span></div>
+    </div>`;
+  }).join('');
+
+  ui.parentDifficulties.innerHTML=Object.entries(difficultyMeta).map(([key,meta])=>{
+    const s=progress.byDifficulty[key];
+    return `<div class="parent-mini-row"><span>${safeText(meta.label)}</span><strong>${s.correct}</strong><small>správně z ${s.attempts} pokusů</small></div>`;
+  }).join('');
+
+  const topicRows=Object.entries(progress.byTopic||{})
+    .filter(([,s])=>s.attempts>=3)
+    .map(([compound,s])=>{
+      const [catKey,topicId]=compound.split(':');
+      if(topicId==='all') return null;
+      const cat=categories[catKey];
+      const topic=cat?.subtopics?.find(t=>t.id===topicId);
+      if(!cat||!topic) return null;
+      return {catKey,cat,topic,s,accuracy:pct(s.correct,s.attempts)};
+    })
+    .filter(Boolean)
+    .sort((a,b)=>a.accuracy-b.accuracy || b.s.attempts-a.s.attempts)
+    .slice(0,5);
+
+  ui.parentTopics.innerHTML=topicRows.length
+    ? topicRows.map(row=>`<div class="parent-topic"><strong>${row.cat.icon} ${safeText(row.topic.label)}</strong><span>${row.accuracy} % úspěšnost</span><small>${safeText(row.cat.name)} · ${row.s.attempts} pokusů</small></div>`).join('')
+    : '<p class="parent-empty">Zatím není dost údajů o jednotlivých podokruzích. Přehled se zpřesní po několika cílených cvičeních.</p>';
+
+  const w=worldState(progress);
+  ui.parentWorld.innerHTML=Object.entries(w.states).map(([key,state])=>`
+    <div class="parent-world-row">
+      <span>${state.icon} ${safeText(state.name)}</span>
+      <div class="parent-world-bar"><i style="width:${Math.round(state.capped/state.max*100)}%"></i></div>
+      <strong>${state.capped}/${state.max}</strong>
+    </div>`
+  ).join('');
 }
 
 init();
