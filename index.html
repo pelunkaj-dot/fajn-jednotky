@@ -143,6 +143,21 @@
       </div>
     </section>
 
+    <div class="parent-auth hidden" id="parentAuth" role="dialog" aria-modal="true" aria-labelledby="parentAuthTitle">
+      <div class="parent-auth-card">
+        <div class="eyebrow">Rodičovská část</div>
+        <h2 id="parentAuthTitle">Zadej rodičovský PIN</h2>
+        <p id="parentAuthText">Zadej 4místný PIN.</p>
+        <input id="parentPinInput" class="parent-pin-input" inputmode="numeric" maxlength="4" autocomplete="one-time-code" aria-label="Rodičovský PIN">
+        <input id="parentPinConfirmInput" class="parent-pin-input hidden" inputmode="numeric" maxlength="4" autocomplete="one-time-code" aria-label="Potvrzení rodičovského PINu">
+        <div id="parentAuthError" class="parent-auth-error hidden"></div>
+        <div class="parent-auth-actions">
+          <button id="parentAuthCancelBtn" class="ghost" type="button">Zrušit</button>
+          <button id="parentAuthSubmitBtn" class="primary" type="button">Pokračovat</button>
+        </div>
+      </div>
+    </div>
+
     <div class="parent-panel hidden" id="parentPanel" role="dialog" aria-modal="true" aria-labelledby="parentTitle">
       <div class="parent-card">
         <div class="parent-head">
@@ -151,7 +166,10 @@
             <h2 id="parentTitle">Jak se daří?</h2>
             <p>Stručný přehled práce, obtížnosti a míst, kde je ještě potřeba procvičovat.</p>
           </div>
-          <button id="parentCloseBtn" class="icon-btn" type="button" aria-label="Zavřít">✕</button>
+          <div class="parent-head-actions">
+            <button id="parentChangePinBtn" class="ghost parent-pin-change" type="button">Změnit PIN</button>
+            <button id="parentCloseBtn" class="icon-btn" type="button" aria-label="Zavřít">✕</button>
+          </div>
         </div>
 
         <div class="parent-summary" id="parentSummary"></div>
