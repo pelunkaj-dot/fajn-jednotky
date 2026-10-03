@@ -10,8 +10,8 @@ const boxesGoods=()=>{const count=pick([4,6,8,10]),box=pick([1.2,1.5,1.8,2.4]),g
 const itemFromPercent=()=>{const total=pick([12.5,15,18.75,20,24]),pct=pick([60,75,80]),count=pick([3,4,5,6]);const one=round(total*pct/100/count*1000,4);return {q:`Zásilka má hmotnost ${String(total).replace('.',',')} kg. ${count} stejných předmětů tvoří ${pct} % její hmotnosti. Kolik gramů váží jeden předmět?`,answer:one,hint:'Nejdřív vypočítej hmotnost všech předmětů, pak vyděl jejich počtem.'}};
 
 export const massTasks={
-  easy:[simple('kg','g',1000,true),simple('g','kg',1000,false),simple('g','mg',1000,true),simple('mg','g',1000,false),simple('t','kg',1000,true),simple('dag','g',10,true),simple('kg','dag',100,true)],
-  medium:[simple('kg','g',1000,true),simple('g','kg',1000,false),simple('t','kg',1000,true),simple('kg','dag',100,true),simple('mg','g',1000,false),
+  easy:[simple('kg','g',1000,true),simple('g','kg',1000,false),simple('g','mg',1000,true),simple('mg','g',1000,false),simple('t','kg',1000,true),simple('dkg (dag)','g',10,true),simple('kg','dkg (dag)',100,true)],
+  medium:[simple('kg','g',1000,true),simple('g','kg',1000,false),simple('t','kg',1000,true),simple('kg','dkg (dag)',100,true),simple('mg','g',1000,false),
     () => {const kg=pick([1,2,3,4,5]),g=pick([125,250,375,500,750]);return {q:`${kg} kg ${g} g = ? g`,answer:kg*1000+g,hint:'Kilogramy převeď na gramy a přičti zbytek.'}}
   ],
   hard:[packageNet,truck,equalPacks,capacity,
