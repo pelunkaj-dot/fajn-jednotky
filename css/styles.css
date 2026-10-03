@@ -142,3 +142,17 @@ body[data-theme="night"] .cloud{opacity:.16}.river{position:absolute;left:-5%;ri
 .parent-auth-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:16px}
 .parent-head-actions{display:flex;align-items:center;gap:8px}
 .parent-pin-change{padding:9px 12px}
+
+.demo-ribbon{position:sticky;top:0;z-index:90;display:flex;justify-content:space-between;align-items:center;gap:14px;padding:10px max(18px,calc((100vw - 1180px)/2 + 20px));background:linear-gradient(90deg,#172a4c,#245fdd);color:#fff;box-shadow:0 8px 24px rgba(0,0,0,.16)}
+.demo-ribbon>div:first-child{display:flex;gap:12px;align-items:center;flex-wrap:wrap}.demo-ribbon strong{letter-spacing:.06em}.demo-ribbon span{font-size:.88rem;opacity:.9}.demo-ribbon-actions{display:flex;align-items:center;gap:10px}.demo-ribbon-actions>span{font-weight:900;font-size:1rem;opacity:1}.demo-full-link,.demo-anchor{display:inline-flex;align-items:center;justify-content:center;text-decoration:none}.demo-full-link{padding:8px 12px;border-radius:12px;background:#fff;color:#17336c;font-weight:900}
+.demo-parent-info,.demo-end{position:fixed;inset:0;z-index:140;display:grid;place-items:center;padding:18px;background:rgba(4,10,20,.7);backdrop-filter:blur(8px)}
+.demo-info-card,.demo-end-card{width:min(560px,100%);background:var(--panel);border:1px solid var(--border);border-radius:28px;padding:28px;box-shadow:0 30px 90px rgba(0,0,0,.42)}
+.demo-info-card h2,.demo-end-card h2{margin:7px 0}.demo-info-card p,.demo-end-card p{color:var(--muted);line-height:1.5}
+.demo-parent-points{display:grid;gap:8px;margin:18px 0}.demo-parent-points span{padding:10px 12px;border-radius:13px;background:var(--panel2);border:1px solid var(--border);font-weight:700}
+.demo-info-actions{display:flex;justify-content:flex-end;gap:10px;flex-wrap:wrap;margin-top:18px}
+.demo-anchor{padding:13px 16px}
+.demo-end-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:9px;margin:18px 0}.demo-notice{grid-column:1/-1;padding:14px;border-radius:15px;background:var(--panel2);border:1px solid var(--border);font-weight:800}
+body[data-demo="true"] .world-stage{box-shadow:0 16px 40px rgba(36,95,221,.16)}
+body[data-demo="true"] .parent-btn:after{content:" · ukázka";font-weight:600;opacity:.65}
+@media(max-width:720px){.demo-ribbon{align-items:flex-start;flex-direction:column}.demo-ribbon-actions{width:100%;justify-content:space-between}.demo-end-stats{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:460px){.demo-full-link{font-size:.82rem}.demo-end-stats{grid-template-columns:1fr}}
