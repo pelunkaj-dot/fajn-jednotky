@@ -1,0 +1,8 @@
+{
+  "name": "fajn-jednotky",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node tests/validate.mjs"
+  }
+}
