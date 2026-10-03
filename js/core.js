@@ -9,16 +9,24 @@ function materialize(item){
   return typeof item==='function' ? item() : structuredClone(item);
 }
 
-export function pickTask(category,difficulty,previousQuestion=''){
+export function pickTask(category,difficulty,previousQuestion='',topicId='all'){
   const list=category.tasks[difficulty]||[];
   if(!list.length) throw new Error('Pro zvolenou obtížnost nejsou připravené úlohy.');
 
-  let candidate=null;
-  for(let attempt=0;attempt<24;attempt++){
-    candidate=materialize(list[Math.floor(Math.random()*list.length)]);
-    if(candidate && candidate.q && candidate.q!==previousQuestion) return candidate;
+  const topic=topicId==='all' ? null : category.subtopics?.find(t=>t.id===topicId);
+  let fallback=null;
+
+  for(let attempt=0;attempt<120;attempt++){
+    const candidate=materialize(list[Math.floor(Math.random()*list.length)]);
+    if(!candidate?.q) continue;
+    if(!fallback) fallback=candidate;
+    if(candidate.q===previousQuestion) continue;
+    if(topic?.match && !topic.match(candidate)) continue;
+    return candidate;
   }
-  return candidate || materialize(list[0]);
+
+  if(topic?.match) throw new Error('Pro tento podokruh zatím není v této obtížnosti vhodná úloha.');
+  return fallback || materialize(list[0]);
 }
 
 export function parseAnswer(raw){
