@@ -125,3 +125,9 @@ body[data-theme="night"] .cloud{opacity:.16}.river{position:absolute;left:-5%;ri
 @media(max-width:460px){
   .mission-result-grid{grid-template-columns:1fr}
 }
+
+.feedback.solution{display:block;background:color-mix(in srgb,var(--accent) 7%,var(--panel2));color:var(--text);border:1px solid color-mix(in srgb,var(--accent) 26%,var(--border));padding:16px 18px}
+.solution-title{font-size:1rem;margin-bottom:10px}
+.solution-title strong{font-size:1.08rem}
+.solution-steps{margin:0;padding-left:1.35rem;display:grid;gap:8px}
+.solution-steps li{line-height:1.45}
