@@ -244,14 +244,13 @@ function renderWorld(){
   Object.entries(w.states).forEach(([key,state])=>{
     const el=document.querySelector(`[data-world-category="${key}"]`);
     if(!el) return;
-    el.classList.remove('phase-0','phase-1','phase-2','phase-3','phase-4','phase-5','active');
+    el.classList.remove('phase-0','phase-1','phase-2','phase-3','phase-4','phase-5','phase-6','active');
     el.classList.add(`phase-${state.phase}`);
     el.classList.toggle('active',selected===key);
     const status=el.querySelector('.district-status');
-    const nextAt=Math.min(state.max,(state.phase+1)*10);
-    status.textContent=state.phase===5
+    status.textContent=state.phase===6
       ? `${state.label} • dokončeno`
-      : `${state.label} • ${state.correct}/${nextAt}`;
+      : `${state.label} • další: ${state.nextLabel} při ${state.nextAt}`;
   });
 }
 function animateWorld(cls){
