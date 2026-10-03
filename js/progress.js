@@ -36,7 +36,8 @@ export function defaults(){
     byDifficulty:Object.fromEntries(DIFFICULTIES.map(k=>[k,emptyDifficulty()])),
     byTopic:{},
     missionRuns:{},
-    missionHistory:[]
+    missionHistory:[],
+    parentPinHash:''
   };
 }
 
