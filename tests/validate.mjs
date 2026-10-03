@@ -118,8 +118,8 @@ console.log('\nSUBTOPIC TESTS');
 for (const [catKey, category] of Object.entries(categories)) {
   for (const topic of (category.subtopics || [])) {
     if (topic.id === 'all') continue;
-    const levels = topic.levels || levels;
-    for (const level of levels) {
+    const topicLevels = topic.levels || ['easy','medium','hard','challenge'];
+    for (const level of topicLevels) {
       try {
         const sample = pickTask(category, level, '', topic.id);
         if (!sample?.q) {
@@ -133,4 +133,11 @@ for (const [catKey, category] of Object.entries(categories)) {
       }
     }
   }
+}
+
+
+console.log(`Podokruhy: kontrola dokončena, celkem chyb nyní ${errors.length}.`);
+if (errors.length) {
+  console.error('\nSUBTOPIC FINAL CHECK: nalezeny blokující chyby.');
+  process.exit(1);
 }
