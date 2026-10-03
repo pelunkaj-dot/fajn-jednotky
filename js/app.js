@@ -1,6 +1,6 @@
 import { categories } from '../data/categories.js';
 import { difficultyMeta,pickTask,parseAnswer,equal } from './core.js';
-import { loadProgress,saveProgress,ensureTopicStats } from './progress.js';
+import { loadProgress,saveProgress,ensureTopicStats,ensureMissionRun,completeMissionRun } from './progress.js';
 import { worldState, missionState } from './world.js';
 import { playCorrect,playWrong,playHint,playStreak,playUnlock } from './audio.js';
 
@@ -27,10 +27,11 @@ const ui={
   missionBar:$('#missionBar'),missionTitle:$('#missionTitle'),missionProgressText:$('#missionProgressText'),
   missionProgressFill:$('#missionProgressFill'),missionComplete:$('#missionComplete'),
   missionCompleteTitle:$('#missionCompleteTitle'),missionCompleteText:$('#missionCompleteText'),
-  missionReward:$('#missionReward'),missionWorldBtn:$('#missionWorldBtn'),missionAgainBtn:$('#missionAgainBtn'),
+  missionResultGrid:$('#missionResultGrid'),missionResultNote:$('#missionResultNote'),missionReward:$('#missionReward'),
+  missionWorldBtn:$('#missionWorldBtn'),missionAgainBtn:$('#missionAgainBtn'),
   parentBtn:$('#parentBtn'),parentPanel:$('#parentPanel'),parentCloseBtn:$('#parentCloseBtn'),
   parentSummary:$('#parentSummary'),parentCategories:$('#parentCategories'),
-  parentDifficulties:$('#parentDifficulties'),parentTopics:$('#parentTopics'),parentWorld:$('#parentWorld')
+  parentDifficulties:$('#parentDifficulties'),parentTopics:$('#parentTopics'),parentMissions:$('#parentMissions'),parentWorld:$('#parentWorld')
 };
 
 function init(){
@@ -186,12 +187,25 @@ function renderAnswer(){
 function currentTopicStats(){
   return selected?ensureTopicStats(progress,selected,selectedTopic):null;
 }
+function currentMissionRun(){
+  if(!selected) return null;
+  const m=missionState(selected,progress.byCategory[selected].correct);
+  return ensureMissionRun(progress,selected,m.target);
+}
 function registerAttempt(){
   progress.totalAttempts++;
   if(selected) progress.byCategory[selected].attempts++;
   progress.byDifficulty[difficulty].attempts++;
   const topic=currentTopicStats();
   if(topic) topic.attempts++;
+
+  const run=currentMissionRun();
+  if(run){
+    run.attempts++;
+    run.byDifficulty[difficulty]=(run.byDifficulty[difficulty]||0)+1;
+    const topicKey=selectedTopic||'all';
+    run.byTopic[topicKey]=(run.byTopic[topicKey]||0)+1;
+  }
 }
 function registerCorrect(firstTry){
   progress.totalCorrect++;
@@ -200,6 +214,12 @@ function registerCorrect(firstTry){
   progress.byDifficulty[difficulty].correct++;
   const topic=currentTopicStats();
   if(topic) topic.correct++;
+
+  const run=currentMissionRun();
+  if(run){
+    run.correct++;
+    if(firstTry) run.firstTry++;
+  }
 
   if(firstTry){
     progress.firstTryCorrect++;
@@ -245,10 +265,15 @@ function check(value){
     }
 
     if(missionCompleted){
+      const completedRun=completeMissionRun(progress,selected,{
+        target:beforeMission.target,
+        categoryName:categories[selected].name,
+        unlockLabel:after.states[selected].label
+      });
       progress.xp+=50;
       saveProgress(progress);
       refreshStats();
-      setTimeout(()=>showMissionComplete(after.states[selected]),850);
+      setTimeout(()=>showMissionComplete(after.states[selected],completedRun),850);
     }else{
       setTimeout(newTask,unlocked?1300:900);
     }
@@ -290,6 +315,8 @@ function handleHelpAction(){
 
   hintUsed=true;
   progress.hintsUsed++;
+  const run=currentMissionRun();
+  if(run) run.hints++;
   if(selected) progress.byCategory[selected].hints++;
   const topic=currentTopicStats();
   if(topic) topic.hints++;
@@ -303,6 +330,8 @@ function handleHelpAction(){
 function revealSolution(){
   solutionShown=true;
   progress.solutionsShown++;
+  const run=currentMissionRun();
+  if(run) run.solutions++;
   if(selected) progress.byCategory[selected].solutions++;
   const topic=currentTopicStats();
   if(topic) topic.solutions++;
@@ -341,9 +370,29 @@ function renderMission(){
   ui.missionProgressText.textContent=m.complete?'Hotovo':`${m.done} / 10`;
   ui.missionProgressFill.style.width=`${m.pct}%`;
 }
-function showMissionComplete(state){
+function dominantKey(map={}){
+  return Object.entries(map).sort((a,b)=>b[1]-a[1])[0]?.[0] || '';
+}
+function showMissionComplete(state,run){
   ui.missionCompleteTitle.textContent=`${state.label} je hotovo!`;
-  ui.missionCompleteText.textContent=`Čtvrť ${state.name} právě získala novou stavbu. Můžeš se na ni podívat, nebo rovnou pokračovat další misí.`;
+  ui.missionCompleteText.textContent=`Čtvrť ${state.name} právě získala novou stavbu.`;
+
+  const firstTryPct=run?.correct?Math.round((run.firstTry||0)/run.correct*100):0;
+  const dominantDifficulty=dominantKey(run?.byDifficulty);
+  const dominantTopic=dominantKey(run?.byTopic);
+  const diffLabel=difficultyMeta[dominantDifficulty]?.label || '—';
+  const topicName=categories[selected]?.subtopics?.find(t=>t.id===dominantTopic)?.label || 'Vše';
+
+  ui.missionResultGrid.innerHTML=[
+    ['Správné úlohy',run?.correct ?? 0],
+    ['Na první pokus',`${run?.firstTry ?? 0} (${firstTryPct} %)`],
+    ['Pokusů celkem',run?.attempts ?? 0],
+    ['Nápověda',run?.hints ?? 0],
+    ['Zobrazené řešení',run?.solutions ?? 0],
+    ['Nejčastější úroveň',diffLabel]
+  ].map(([label,value])=>`<div class="mission-result-stat"><strong>${value}</strong><span>${label}</span></div>`).join('');
+
+  ui.missionResultNote.textContent=`Nejčastěji procvičováno: ${topicName}.`;
   ui.missionReward.textContent='+50 XP za dokončenou misi';
   ui.missionComplete.classList.remove('hidden');
 }
@@ -439,6 +488,23 @@ function renderParentPanel(){
   ui.parentTopics.innerHTML=topicRows.length
     ? topicRows.map(row=>`<div class="parent-topic"><strong>${row.cat.icon} ${safeText(row.topic.label)}</strong><span>${row.accuracy} % úspěšnost</span><small>${safeText(row.cat.name)} · ${row.s.attempts} pokusů</small></div>`).join('')
     : '<p class="parent-empty">Zatím není dost údajů o jednotlivých podokruzích. Přehled se zpřesní po několika cílených cvičeních.</p>';
+
+  const recentMissions=(progress.missionHistory||[]).slice(0,5);
+  ui.parentMissions.innerHTML=recentMissions.length
+    ? recentMissions.map(run=>{
+        const firstTryPct=run.correct?Math.round((run.firstTry||0)/run.correct*100):0;
+        const diffKey=dominantKey(run.byDifficulty);
+        const diffLabel=difficultyMeta[diffKey]?.label || '—';
+        const date=run.completedAt?new Date(run.completedAt).toLocaleDateString('cs-CZ'):'';
+        return `<div class="parent-mission">
+          <div><strong>${safeText(run.categoryName||categories[run.categoryKey]?.name||'Mise')}</strong><small>${safeText(run.unlockLabel||'Dokončená mise')} · ${date}</small></div>
+          <span>${run.correct||0} správně</span>
+          <span>${firstTryPct} % na první pokus</span>
+          <span>${run.hints||0}× nápověda</span>
+          <span>${safeText(diffLabel)}</span>
+        </div>`;
+      }).join('')
+    : '<p class="parent-empty">Zatím není dokončená žádná nová mise. Po dokončení série se její výsledek uloží sem.</p>';
 
   const w=worldState(progress);
   ui.parentWorld.innerHTML=Object.entries(w.states).map(([key,state])=>`
