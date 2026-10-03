@@ -5,6 +5,10 @@ import { worldState, missionState } from './world.js';
 import { playCorrect,playWrong,playHint,playStreak,playUnlock } from './audio.js';
 import { solutionSteps } from './solutions.js';
 
+const IS_DEMO=document.body.dataset.demo==='true';
+const DEMO_TOTAL_LIMIT=15;
+const DEMO_CATEGORY_LIMIT=5;
+
 let difficulty='easy';
 let selected=null;
 let selectedTopic='all';
@@ -34,7 +38,9 @@ const ui={
   parentAuth:$('#parentAuth'),parentAuthTitle:$('#parentAuthTitle'),parentAuthText:$('#parentAuthText'),parentPinInput:$('#parentPinInput'),
   parentPinConfirmInput:$('#parentPinConfirmInput'),parentAuthError:$('#parentAuthError'),parentAuthCancelBtn:$('#parentAuthCancelBtn'),parentAuthSubmitBtn:$('#parentAuthSubmitBtn'),
   parentSummary:$('#parentSummary'),parentCategories:$('#parentCategories'),
-  parentDifficulties:$('#parentDifficulties'),parentTopics:$('#parentTopics'),parentMissions:$('#parentMissions'),parentWorld:$('#parentWorld')
+  parentDifficulties:$('#parentDifficulties'),parentTopics:$('#parentTopics'),parentMissions:$('#parentMissions'),parentWorld:$('#parentWorld'),
+  demoCounter:$('#demoCounter'),demoParentInfo:$('#demoParentInfo'),demoParentClose:$('#demoParentClose'),
+  demoEnd:$('#demoEnd'),demoEndText:$('#demoEndText'),demoEndStats:$('#demoEndStats'),demoResetBtn:$('#demoResetBtn')
 };
 
 function init(){
@@ -45,6 +51,10 @@ function init(){
   refreshStats();
   renderWorld();
   refreshSoundButton();
+  if(IS_DEMO){
+    refreshDemoCounter();
+    if(progress.totalCorrect>=DEMO_TOTAL_LIMIT) setTimeout(showDemoEnd,250);
+  }
 }
 function bind(){
   ui.back.onclick=()=>{ui.panel.classList.add('hidden');selected=null;selectedTopic='all';renderWorld()};
@@ -60,7 +70,7 @@ function bind(){
   $$('[data-world-category]').forEach(btn=>btn.onclick=()=>openCategory(btn.dataset.worldCategory));
   ui.missionWorldBtn.onclick=()=>closeMissionComplete(true);
   ui.missionAgainBtn.onclick=()=>closeMissionComplete(false);
-  ui.parentBtn.onclick=beginParentAccess;
+  ui.parentBtn.onclick=()=>IS_DEMO?openDemoParentInfo():beginParentAccess();
   ui.parentCloseBtn.onclick=closeParentPanel;
   ui.parentChangePinBtn.onclick=()=>openParentAuth('change');
   ui.parentPanel.addEventListener('click',e=>{if(e.target===ui.parentPanel) closeParentPanel()});
@@ -71,6 +81,11 @@ function bind(){
   ui.parentPinConfirmInput.addEventListener('input',cleanPinInput);
   ui.parentPinInput.addEventListener('keydown',e=>{if(e.key==='Enter')submitParentAuth()});
   ui.parentPinConfirmInput.addEventListener('keydown',e=>{if(e.key==='Enter')submitParentAuth()});
+  if(IS_DEMO){
+    ui.demoParentClose.onclick=closeDemoParentInfo;
+    ui.demoParentInfo.addEventListener('click',e=>{if(e.target===ui.demoParentInfo) closeDemoParentInfo()});
+    ui.demoResetBtn.onclick=resetDemo;
+  }
 }
 function setTheme(theme){
   progress.theme=theme;
@@ -108,6 +123,11 @@ function renderCategories(){
   });
 }
 function openCategory(key){
+  if(IS_DEMO && progress.totalCorrect>=DEMO_TOTAL_LIMIT){showDemoEnd();return}
+  if(IS_DEMO && (progress.byCategory[key]?.correct||0)>=DEMO_CATEGORY_LIMIT){
+    showDemoNotice('Tuto oblast už sis v demu vyzkoušel. Vyber jinou oblast.');
+    return;
+  }
   selected=key;
   selectedTopic='all';
   ui.panel.classList.remove('hidden');
@@ -153,6 +173,12 @@ function resetAttemptState(){
   ui.hint.textContent='Nápověda';
 }
 function newTask(){
+  if(IS_DEMO && progress.totalCorrect>=DEMO_TOTAL_LIMIT){showDemoEnd();return}
+  if(IS_DEMO && selected && (progress.byCategory[selected]?.correct||0)>=DEMO_CATEGORY_LIMIT){
+    ui.panel.classList.add('hidden');
+    showDemoNotice('Ukázka této oblasti je hotová. Zkus některou z dalších oblastí.');
+    return;
+  }
   const previousQuestion=task?.q||'';
   try{
     task=pickTask(categories[selected],difficulty,previousQuestion,selectedTopic);
@@ -274,6 +300,18 @@ function check(value){
       animateWorld('flash-good');
     }
 
+    if(IS_DEMO){
+      refreshDemoCounter();
+      if(progress.totalCorrect>=DEMO_TOTAL_LIMIT){
+        setTimeout(showDemoEnd,850);
+      }else if((progress.byCategory[selected]?.correct||0)>=DEMO_CATEGORY_LIMIT){
+        setTimeout(()=>showDemoNotice('Ukázková mise v této oblasti je splněná. Teď zkus jinou část světa.'),850);
+      }else{
+        setTimeout(newTask,900);
+      }
+      return;
+    }
+
     if(missionCompleted){
       const completedRun=completeMissionRun(progress,selected,{
         target:beforeMission.target,
@@ -382,6 +420,15 @@ function renderMission(){
     return;
   }
   ui.missionBar.classList.remove('hidden');
+
+  if(IS_DEMO){
+    const done=Math.min(DEMO_CATEGORY_LIMIT,progress.byCategory[selected].correct||0);
+    ui.missionTitle.textContent='Ukázková mise: prozkoumej tuto čtvrť';
+    ui.missionProgressText.textContent=`${done} / ${DEMO_CATEGORY_LIMIT}`;
+    ui.missionProgressFill.style.width=`${Math.round(done/DEMO_CATEGORY_LIMIT*100)}%`;
+    return;
+  }
+
   const m=missionState(selected,progress.byCategory[selected].correct);
   ui.missionTitle.textContent=m.complete?'Čtvrť je dokončená':m.title;
   ui.missionProgressText.textContent=m.complete?'Hotovo':`${m.done} / 10`;
@@ -422,7 +469,8 @@ function closeMissionComplete(showWorld){
   }
 }
 function renderWorld(){
-  const w=worldState(progress);
+  const worldProgress=IS_DEMO?demoWorldProgress():progress;
+  const w=worldState(worldProgress);
   ui.worldTitle.textContent=w.title;
   ui.worldText.textContent=w.text;
   ui.worldFill.style.width=`${w.pct}%`;
@@ -435,9 +483,16 @@ function renderWorld(){
     el.classList.add(`phase-${state.phase}`);
     el.classList.toggle('active',selected===key);
     const status=el.querySelector('.district-status');
-    status.textContent=state.phase===6
-      ? `${state.label} • dokončeno`
-      : `${state.label} • další: ${state.nextLabel} při ${state.nextAt}`;
+    if(IS_DEMO){
+      const demoCorrect=progress.byCategory[key]?.correct||0;
+      status.textContent=demoCorrect>=DEMO_CATEGORY_LIMIT
+        ? 'Ukázka dokončena'
+        : `${demoCorrect}/${DEMO_CATEGORY_LIMIT} v demu`;
+    }else{
+      status.textContent=state.phase===6
+        ? `${state.label} • dokončeno`
+        : `${state.label} • další: ${state.nextLabel} při ${state.nextAt}`;
+    }
   });
 }
 function animateWorld(cls){
@@ -451,6 +506,68 @@ function pct(correct,attempts){
 }
 function safeText(value){
   return String(value).replace(/[&<>"']/g,ch=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[ch]));
+}
+function demoWorldProgress(){
+  const copy={
+    ...progress,
+    byCategory:Object.fromEntries(
+      Object.entries(progress.byCategory).map(([key,value])=>[
+        key,
+        {...value,correct:Math.min(DEMO_CATEGORY_LIMIT,value.correct||0)*10}
+      ])
+    )
+  };
+  return copy;
+}
+function refreshDemoCounter(){
+  if(ui.demoCounter) ui.demoCounter.textContent=`${Math.min(progress.totalCorrect,DEMO_TOTAL_LIMIT)} / ${DEMO_TOTAL_LIMIT}`;
+}
+function openDemoParentInfo(){
+  ui.demoParentInfo.classList.remove('hidden');
+  document.body.classList.add('modal-open');
+}
+function closeDemoParentInfo(){
+  ui.demoParentInfo.classList.add('hidden');
+  document.body.classList.remove('modal-open');
+}
+function showDemoNotice(message){
+  ui.demoEndText.textContent=message;
+  ui.demoEnd.querySelector('.eyebrow').textContent='Demo FajnJednotky';
+  ui.demoEnd.querySelector('#demoEndTitle').textContent='Zkus ještě jinou část světa';
+  ui.demoEndStats.innerHTML=`<div class="demo-notice">${safeText(message)}</div>`;
+  ui.demoEnd.classList.remove('hidden');
+  document.body.classList.add('modal-open');
+
+  const reset=ui.demoResetBtn;
+  reset.textContent='Pokračovat v demu';
+  reset.onclick=()=>{
+    ui.demoEnd.classList.add('hidden');
+    document.body.classList.remove('modal-open');
+    reset.textContent='Spustit demo znovu';
+    reset.onclick=resetDemo;
+  };
+}
+function showDemoEnd(){
+  if(!ui.demoEnd) return;
+  const tried=Object.entries(progress.byCategory).filter(([,s])=>(s.correct||0)>0).length;
+  const firstTry=progress.totalCorrect?Math.round(progress.firstTryCorrect/progress.totalCorrect*100):0;
+  ui.demoEnd.querySelector('.eyebrow').textContent='Ukázka dokončena';
+  ui.demoEnd.querySelector('#demoEndTitle').textContent='Teď už víš, jak FajnJednotky fungují';
+  ui.demoEndText.textContent='Vyzkoušel jsi převody, různé obtížnosti, nápovědu, krokové řešení i růst světa.';
+  ui.demoEndStats.innerHTML=[
+    ['Správně',Math.min(progress.totalCorrect,DEMO_TOTAL_LIMIT)],
+    ['Oblasti',tried+' / 5'],
+    ['Na první pokus',firstTry+' %'],
+    ['Nápověda',progress.hintsUsed||0]
+  ].map(([label,value])=>`<div class="parent-stat"><strong>${value}</strong><span>${label}</span></div>`).join('');
+  ui.demoEnd.classList.remove('hidden');
+  document.body.classList.add('modal-open');
+  ui.demoResetBtn.textContent='Spustit demo znovu';
+  ui.demoResetBtn.onclick=resetDemo;
+}
+function resetDemo(){
+  localStorage.removeItem('fajn-jednotky-demo-v1');
+  location.reload();
 }
 let parentAuthMode='login';
 
