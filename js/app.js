@@ -48,13 +48,15 @@ function openCategory(key){
   ui.panel.scrollIntoView({behavior:'smooth',block:'start'});
 }
 function newTask(){
-  task=pickTask(categories[selected],difficulty);
+  const previousQuestion=task?.q||'';
+  task=pickTask(categories[selected],difficulty,previousQuestion);
   ui.feedback.className='feedback hidden';
   ui.feedback.textContent='';
   ui.meta.textContent=categories[selected].name;
   ui.title.textContent=difficultyMeta[difficulty].desc;
   ui.badge.textContent=difficultyMeta[difficulty].label;
   ui.q.textContent=task.q;
+  ui.q.title=difficultyMeta[difficulty].detail;
   renderAnswer();
 }
 function renderAnswer(){
