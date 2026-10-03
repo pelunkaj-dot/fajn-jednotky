@@ -6,6 +6,7 @@ import { playCorrect,playWrong,playHint,playStreak,playUnlock } from './audio.js
 
 let difficulty='easy';
 let selected=null;
+let selectedTopic='all';
 let task=null;
 let progress=loadProgress();
 
@@ -18,7 +19,7 @@ const $=s=>document.querySelector(s);
 const $$=s=>[...document.querySelectorAll(s)];
 
 const ui={
-  switch:$('#difficultySwitch'),grid:$('#categoryGrid'),panel:$('#exercisePanel'),back:$('#backBtn'),
+  switch:$('#difficultySwitch'),grid:$('#categoryGrid'),panel:$('#exercisePanel'),back:$('#backBtn'),topics:$('#topicFilters'),
   meta:$('#exerciseMeta'),title:$('#exerciseTitle'),badge:$('#difficultyBadge'),q:$('#questionText'),answer:$('#answerArea'),
   feedback:$('#feedback'),hint:$('#hintBtn'),next:$('#newBtn'),xp:$('#xp'),streak:$('#streak'),
   worldPanel:$('#worldPanel'),worldTitle:$('#worldTitle'),worldText:$('#worldText'),worldFill:$('#worldFill'),
@@ -39,7 +40,7 @@ function init(){
   refreshSoundButton();
 }
 function bind(){
-  ui.back.onclick=()=>{ui.panel.classList.add('hidden');selected=null;renderWorld()};
+  ui.back.onclick=()=>{ui.panel.classList.add('hidden');selected=null;selectedTopic='all';renderWorld()};
   ui.hint.onclick=()=>handleHelpAction();
   ui.next.onclick=()=>newTask();
   ui.sound.onclick=()=>{
@@ -74,7 +75,7 @@ function renderDifficulties(){
   Object.entries(difficultyMeta).forEach(([key,m])=>{
     const b=document.createElement('button');
     b.textContent=m.label;b.title=m.detail;b.classList.toggle('active',key===difficulty);
-    b.onclick=()=>{difficulty=key;renderDifficulties();if(selected)newTask()};
+    b.onclick=()=>{difficulty=key;renderDifficulties();if(selected){ensureTopicAllowed();renderTopicFilters();newTask()}};
     ui.switch.appendChild(b);
   });
 }
@@ -90,11 +91,40 @@ function renderCategories(){
 }
 function openCategory(key){
   selected=key;
+  selectedTopic='all';
   ui.panel.classList.remove('hidden');
+  renderTopicFilters();
   newTask();
   renderWorld();
   renderMission();
   ui.panel.scrollIntoView({behavior:'smooth',block:'start'});
+}
+function allowedTopics(){
+  if(!selected) return [];
+  return (categories[selected].subtopics||[]).filter(t=>t.id==='all'||!t.levels||t.levels.includes(difficulty));
+}
+function ensureTopicAllowed(){
+  if(!allowedTopics().some(t=>t.id===selectedTopic)) selectedTopic='all';
+}
+function renderTopicFilters(){
+  if(!selected){ui.topics.innerHTML='';return}
+  ensureTopicAllowed();
+  ui.topics.innerHTML='';
+  allowedTopics().forEach(item=>{
+    const b=document.createElement('button');
+    b.className='topic-chip';
+    b.textContent=item.label;
+    b.classList.toggle('active',item.id===selectedTopic);
+    b.onclick=()=>{
+      selectedTopic=item.id;
+      renderTopicFilters();
+      newTask();
+    };
+    ui.topics.appendChild(b);
+  });
+}
+function topicLabel(){
+  return categories[selected]?.subtopics?.find(t=>t.id===selectedTopic)?.label || 'Vše';
 }
 function resetAttemptState(){
   attempts=0;
@@ -106,11 +136,17 @@ function resetAttemptState(){
 }
 function newTask(){
   const previousQuestion=task?.q||'';
-  task=pickTask(categories[selected],difficulty,previousQuestion);
+  try{
+    task=pickTask(categories[selected],difficulty,previousQuestion,selectedTopic);
+  }catch(err){
+    selectedTopic='all';
+    renderTopicFilters();
+    task=pickTask(categories[selected],difficulty,previousQuestion,'all');
+  }
   resetAttemptState();
   ui.feedback.className='feedback hidden';
   ui.feedback.textContent='';
-  ui.meta.textContent=categories[selected].name;
+  ui.meta.textContent=categories[selected].name+' · '+topicLabel();
   ui.title.textContent=difficultyMeta[difficulty].desc;
   ui.badge.textContent=difficultyMeta[difficulty].label;
   ui.q.textContent=task.q;
