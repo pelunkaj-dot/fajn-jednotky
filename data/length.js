@@ -1,40 +1,106 @@
+import { pick, ri, round, choiceSet, spaced } from './helpers.js';
+
+const conv = (from,to,factor,down=true) => () => {
+  const base = down ? pick([1.2,1.5,2.4,2.75,3.6,4.25,5.8,7.05,8.4]) : pick([12,25,48,75,125,240,375,680,925]);
+  const answer = down ? round(base*factor,6) : round(base/factor,6);
+  return {
+    q:`${String(base).replace('.',',')} ${from} = ? ${to}`,
+    answer,
+    choices:choiceSet(answer,[answer*10,answer/10,answer*100]),
+    hint:`Převod mezi ${from} a ${to} má poměr ${factor}:1.`
+  };
+};
+
+const mixedMcm = () => {
+  const m=ri(1,9), cm=pick([5,12,25,38,46,65,72,84,95]);
+  return {q:`${m} m ${cm} cm = ? cm`,answer:m*100+cm,hint:'Každý metr má 100 centimetrů.'};
+};
+const mixedKmM = () => {
+  const km=ri(1,8), m=pick([50,125,240,375,480,650,725,900]);
+  return {q:`${km} km ${m} m = ? m`,answer:km*1000+m,hint:'Každý kilometr má 1 000 metrů.'};
+};
+const compareDifference = () => {
+  const a=pick([1.25,1.48,1.72,1.85,2.05,2.4,2.75]);
+  const b=pick([85,110,135,160,190,225]);
+  const acm=Math.round(a*100);
+  const hi=Math.max(acm,b), lo=Math.min(acm,b);
+  return {q:`Jedna délka je ${String(a).replace('.',',')} m, druhá ${b} cm. O kolik centimetrů se liší?`,answer:hi-lo,hint:'Převeď obě délky na centimetry.'};
+};
+const remainingRoute = () => {
+  const total=pick([2.4,3.2,4.75,5.6,6.25]);
+  const walked=pick([650,875,1200,1450,1850]);
+  const totalM=Math.round(total*1000);
+  if(walked>=totalM) return remainingRoute();
+  return {q:`Trasa měří ${String(total).replace('.',',')} km. Ušel jsi ${spaced(walked)} m. Kolik metrů ještě zbývá?`,answer:totalM-walked,hint:'Nejdřív převeď celou trasu na metry.'};
+};
+const equalParts = () => {
+  const parts=pick([3,4,5,6,8]);
+  const one=pick([120,150,180,225,240,275,320]);
+  const totalM=round(parts*one/100,2);
+  return {q:`Provaz dlouhý ${String(totalM).replace('.',',')} m rozdělíme na ${parts} stejně dlouhých částí. Kolik centimetrů měří jedna část?`,answer:one,hint:'Převeď celkovou délku na centimetry a vyděl počtem částí.'};
+};
+const perimeterSide = () => {
+  const a=pick([120,150,175,185,220,240]);
+  const b=pick([90,125,160,185,210]);
+  const perimeter=2*(a+b);
+  return {q:`Obdélník má obvod ${String(perimeter/100).replace('.',',')} m. Jedna strana měří ${a} cm. Kolik centimetrů měří druhá strana?`,answer:b,hint:'Převeď obvod na centimetry a použij vztah 2(a + b).'};
+};
+const mapScale = () => {
+  const scale=pick([10000,25000,50000]);
+  const cm=pick([2.4,3.2,4.8,5.6,7.2,7.6,8.4]);
+  const km=round(cm*scale/100000,4);
+  return {q:`Mapa má měřítko 1 : ${spaced(scale)}. Vzdálenost na mapě je ${String(cm).replace('.',',')} cm. Kolik kilometrů je to ve skutečnosti?`,answer:km,hint:'Vzdálenost na mapě vynásob měřítkem a centimetry převeď na kilometry.'};
+};
+const planScale = () => {
+  const scale=pick([20,25,50,100]);
+  const cm=pick([3.2,4.6,5.4,6.8,7.5,9.4]);
+  return {q:`Na plánu v měřítku 1 : ${scale} měří stěna ${String(cm).replace('.',',')} cm. Kolik metrů měří ve skutečnosti?`,answer:round(cm*scale/100,4),hint:'Vynásob délku na plánu měřítkem a centimetry převeď na metry.'};
+};
+const fractionRoute = () => {
+  const total=pick([12.6,18.9,24.6,27.3,32.4]);
+  const div=pick([2,3,4,6]);
+  const meters=round(total/div*1000,4);
+  return {q:`První 1/${div} trasy dlouhé ${String(total).replace('.',',')} km vede lesem. Kolik metrů vede lesem?`,answer:meters,hint:`Vypočítej 1/${div} z celé délky a výsledek převeď na metry.`};
+};
+
 export const lengthTasks={
   easy:[
-    {q:'3,4 m = ? cm',answer:340,choices:[34,340,3400,3.4],hint:'1 m = 100 cm.'},
-    {q:'2 500 m = ? km',answer:2.5,choices:[25,2.5,.25,250],hint:'1 km = 1 000 m.'},
-    {q:'72 cm = ? mm',answer:720,choices:[7.2,72,720,7200],hint:'1 cm = 10 mm.'},
-    {q:'6,3 km = ? m',answer:6300,choices:[63,630,6300,63000],hint:'1 km = 1 000 m.'},
-    {q:'480 mm = ? cm',answer:48,choices:[4.8,48,480,4800],hint:'10 mm = 1 cm.'},
-    {q:'9 dm = ? cm',answer:90,choices:[9,90,900,.9],hint:'1 dm = 10 cm.'},
-    {q:'125 cm = ? m',answer:1.25,choices:[.125,1.25,12.5,1250],hint:'100 cm = 1 m.'},
-    {q:'0,8 m = ? mm',answer:800,choices:[8,80,800,8000],hint:'1 m = 1 000 mm.'}
+    conv('m','cm',100,true),conv('cm','m',100,false),
+    conv('cm','mm',10,true),conv('mm','cm',10,false),
+    conv('km','m',1000,true),conv('m','km',1000,false),
+    conv('m','mm',1000,true),conv('dm','cm',10,true)
   ],
   medium:[
-    {q:'0,075 km = ? m',answer:75,hint:'1 km = 1 000 m, takže 0,075 × 1 000 = 75.'},
-    {q:'3 m 48 cm = ? cm',answer:348,hint:'3 m = 300 cm, potom přičti 48 cm.'},
-    {q:'4 250 mm = ? m',answer:4.25,hint:'1 m = 1 000 mm, takže dělíš 1 000.'},
-    {q:'2,36 m = ? mm',answer:2360,hint:'1 m = 1 000 mm.'},
-    {q:'0,0048 km = ? m',answer:4.8,hint:'Kilometry na metry převádíš násobením 1 000.'},
-    {q:'68 dm = ? m',answer:6.8,hint:'10 dm = 1 m.'},
-    {q:'1 km 250 m = ? m',answer:1250,hint:'1 km = 1 000 m, potom přičti 250 m.'},
-    {q:'0,92 m = ? cm',answer:92,hint:'1 m = 100 cm.'}
+    mixedMcm,mixedKmM,
+    conv('km','m',1000,true),conv('m','km',1000,false),
+    conv('m','mm',1000,true),conv('mm','m',1000,false),
+    conv('m','cm',100,true),conv('cm','m',100,false)
   ],
   hard:[
-    {q:'Stůl je dlouhý 1,85 m a police 172 cm. O kolik centimetrů je stůl delší?',answer:13,hint:'Převeď 1,85 m na centimetry a potom délky odečti.'},
-    {q:'Turistická trasa měří 2,4 km. Ušel jsi 875 m. Kolik metrů ještě zbývá?',answer:1525,hint:'2,4 km = 2 400 m.'},
-    {q:'Z role kabelu dlouhé 35 m se odstřihlo 8 m 75 cm. Kolik centimetrů kabelu zůstalo?',answer:2625,hint:'35 m = 3 500 cm a 8 m 75 cm = 875 cm.'},
-    {q:'Tři stejné latě mají dohromady délku 7,2 m. Kolik centimetrů měří jedna lať?',answer:240,hint:'Nejdřív 7,2 m vyděl třemi, potom výsledek převeď na centimetry.'},
-    {q:'Běžec absolvoval 1,35 km a potom ještě 680 m. Kolik metrů uběhl celkem?',answer:2030,hint:'1,35 km = 1 350 m.'},
-    {q:'Místnost je dlouhá 4,8 m. Koberec je o 35 cm kratší. Kolik centimetrů měří koberec?',answer:445,hint:'4,8 m = 480 cm.'},
-    {q:'Provaz dlouhý 12,5 m rozdělíme na 5 stejně dlouhých částí. Kolik centimetrů měří jedna část?',answer:250,hint:'12,5 ÷ 5 = 2,5 m.'},
-    {q:'Auto ujelo 18,6 km. Do cíle mu zbývá 7 450 m. Jak dlouhá je celá trasa v kilometrech?',answer:26.05,hint:'7 450 m = 7,45 km.'}
+    compareDifference,remainingRoute,equalParts,
+    () => {
+      const room=pick([3.8,4.2,4.8,5.1]), shorter=pick([20,25,35,45,60]);
+      return {q:`Místnost je dlouhá ${String(room).replace('.',',')} m. Koberec je o ${shorter} cm kratší. Kolik centimetrů měří koberec?`,answer:Math.round(room*100-shorter),hint:'Převeď délku místnosti na centimetry a odečti rozdíl.'};
+    },
+    () => {
+      const pieces=pick([4,5,6,8]), each=pick([125,160,175,225,250]);
+      return {q:`${pieces} stejných tyčí má dohromady délku ${String(pieces*each/100).replace('.',',')} m. Kolik centimetrů měří jedna tyč?`,answer:each,hint:'Převeď celkovou délku na centimetry a vyděl počtem tyčí.'};
+    },
+    () => {
+      const a=pick([1.25,1.5,1.75,2.2]), b=pick([65,80,95,120]);
+      return {q:`První úsek měří ${String(a).replace('.',',')} km a druhý ${b} m. Kolik metrů měří oba úseky dohromady?`,answer:Math.round(a*1000+b),hint:'Kilometry nejprve převeď na metry.'};
+    }
   ],
   challenge:[
-    {q:'Mapa má měřítko 1 : 25 000. Vzdálenost dvou míst na mapě je 7,6 cm. Kolik kilometrů je to ve skutečnosti?',answer:1.9,hint:'7,6 × 25 000 = 190 000 cm. Potom centimetry převeď na kilometry.'},
-    {q:'Cyklista jel první třetinu trasy dlouhé 24,6 km po asfaltu. Kolik metrů jel po asfaltu?',answer:8200,hint:'Nejdřív vypočítej třetinu z 24,6 km.'},
-    {q:'Obvod obdélníku je 7,4 m. Jedna strana měří 185 cm. Kolik centimetrů měří druhá strana?',answer:185,hint:'7,4 m = 740 cm. Platí 2(a + b) = 740.'},
-    {q:'Měřítko plánu je 1 : 50. Stěna na plánu měří 9,4 cm. Kolik metrů měří ve skutečnosti?',answer:4.7,hint:'9,4 × 50 = 470 cm.'},
-    {q:'Vlak ujede za 12 minut 18 km. Kolik metrů ujede za 1 minutu při stejné rychlosti?',answer:1500,hint:'18 km = 18 000 m a potom vyděl 12.'},
-    {q:'Dvě trasy měří 3,75 km a 3 680 m. O kolik metrů je delší první trasa?',answer:70,hint:'3,75 km = 3 750 m.'}
+    mapScale,planScale,perimeterSide,fractionRoute,
+    () => {
+      const total=pick([18,24,30,36]), minutes=pick([9,12,15,18]);
+      return {q:`Cyklista ujede za ${minutes} minut ${total} km. Kolik metrů ujede za 1 minutu při stejné rychlosti?`,answer:total*1000/minutes,hint:'Kilometry převeď na metry a vyděl počtem minut.'};
+    },
+    () => {
+      const a=pick([2.75,3.2,3.75,4.05,4.6]), diff=pick([35,50,70,125,180]);
+      const b=Math.round(a*1000-diff);
+      return {q:`První trasa měří ${String(a).replace('.',',')} km, druhá ${spaced(b)} m. O kolik metrů je první trasa delší?`,answer:diff,hint:'První trasu převeď na metry.'};
+    }
   ]
 };
