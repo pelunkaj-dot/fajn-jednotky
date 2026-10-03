@@ -1,4 +1,5 @@
-const KEY='fajn-jednotky-progress-v2';
+const IS_DEMO=typeof document!=='undefined' && document.body?.dataset.demo==='true';
+const KEY=IS_DEMO?'fajn-jednotky-demo-v1':'fajn-jednotky-progress-v2';
 const CATEGORIES=['length','area','volume','time','mass'];
 const DIFFICULTIES=['easy','medium','hard','challenge'];
 
