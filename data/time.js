@@ -33,7 +33,7 @@ export const timeTasks={
     {q:'Závod začal ve 23:48 a skončil následující den v 1:17. Kolik minut trval?',answer:89,hint:'Do půlnoci zbývá 12 minut a po půlnoci uplyne ještě 77 minut.'},
     {q:'Vlak vyjel v 22:36. Cesta trvala 3 h 52 min. V kolik hodin přijel následující den? Zapiš čas jako číslo ve tvaru HHMM.',answer:228,hint:'22:36 + 3 h 52 min = 2:28 následujícího dne.'},
     {q:'Stroj pracoval 2 h 18 min, měl 37 min odstávku a potom pracoval ještě 1 h 46 min. Kolik minut od začátku do konce celkem uplynulo?',answer:281,hint:'Sečti oba pracovní úseky i odstávku.'},
-    {q:'Cyklista ujel trasu za 1 h 36 min. Druhý den stejnou trasu zvládl o 12,5 % rychleji ve smyslu kratšího času. O kolik minut se jeho čas zkrátil?',answer:12,hint:'1 h 36 min = 96 min. Vypočítej 12,5 % z 96.'},
+    {q:'Cyklista ujel trasu za 1 h 36 min. Druhý den zkrátil svůj čas o 12,5 %. O kolik minut jel druhý den kratší dobu?',answer:12,hint:'1 h 36 min = 96 min. Vypočítej 12,5 % z 96.'},
     {q:'Dvě třetiny pracovního dne dlouhého 7 h 30 min už uplynuly. Kolik minut zbývá?',answer:150,hint:'7 h 30 min = 450 min. Jedna třetina je 150 min.'},
     {q:'Časový interval trvá 2,75 h. Kolik je to sekund?',answer:9900,hint:'2,75 h = 165 min = 9 900 s.'}
   ]
