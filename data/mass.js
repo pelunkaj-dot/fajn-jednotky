@@ -1,40 +1,25 @@
+import { pick, round, choiceSet, spaced } from './helpers.js';
+
+const simple=(from,to,factor,down=true)=>()=>{const base=down?pick([1.2,1.5,2.4,2.75,3.6,4.25,5.8,7.5]):pick([120,250,480,750,1250,2400,3750,8500]);const answer=down?round(base*factor,6):round(base/factor,6);return {q:`${String(base).replace('.',',')} ${from} = ? ${to}`,answer,choices:choiceSet(answer,[answer*10,answer/10,answer*100]),hint:`Mezi ${from} a ${to} je převodní poměr ${factor}:1.`}};
+const packageNet=()=>{const gross=pick([2.4,3.2,3.75,4.6,5.25]),pack=pick([120,180,250,280,350]);return {q:`Balík váží ${String(gross).replace('.',',')} kg a obal ${pack} g. Kolik gramů váží samotný obsah?`,answer:Math.round(gross*1000-pack),hint:'Kilogramy převeď na gramy a odečti obal.'}};
+const truck=()=>{const tons=pick([1.2,1.5,1.8,2.4,3.2]),out=pick([250,385,450,600,725]);const kg=Math.round(tons*1000);if(out>=kg)return truck();return {q:`Náklad má ${String(tons).replace('.',',')} t. Vyloží se ${out} kg. Kolik kilogramů zůstane?`,answer:kg-out,hint:'Tuny převeď na kilogramy.'}};
+const equalPacks=()=>{const count=pick([4,5,6,8,10,12]),each=pick([125,180,225,250,320,450,800]);const total=round(count*each/1000,4);return {q:`${count} stejných balíčků váží dohromady ${String(total).replace('.',',')} kg. Kolik gramů váží jeden balíček?`,answer:each,hint:'Celkovou hmotnost převeď na gramy a vyděl počtem balíčků.'}};
+const capacity=()=>{const limit=pick([1.2,1.5,2.4,3.5,5]),loaded=pick([650,845,1120,1750,2400]);const kg=limit*1000;if(loaded>=kg)return capacity();return {q:`Nosnost je ${String(limit).replace('.',',')} t. Už je naloženo ${spaced(loaded)} kg. Kolik kilogramů lze ještě přidat?`,answer:kg-loaded,hint:'Nosnost převeď na kilogramy.'}};
+const percentMass=()=>{const kg=pick([1.2,1.6,2.4,3.2,4.8]),pct=pick([20,25,35,40,60,75]);return {q:`Směs má hmotnost ${String(kg).replace('.',',')} kg a ${pct} % tvoří látka A. Kolik gramů látky A směs obsahuje?`,answer:round(kg*1000*pct/100,4),hint:'Kilogramy převeď na gramy a vypočítej procenta.'}};
+const boxesGoods=()=>{const count=pick([4,6,8,10]),box=pick([1.2,1.5,1.8,2.4]),goods=pick([40,60,80,100,120]);const total=round(count*box+goods,4);return {q:`${count} stejných beden se zbožím váží dohromady ${String(total).replace('.',',')} kg. Každá prázdná bedna váží ${String(box).replace('.',',')} kg. Kolik kilogramů váží samotné zboží?`,answer:goods,hint:'Odečti hmotnost všech prázdných beden.'}};
+const itemFromPercent=()=>{const total=pick([12.5,15,18.75,20,24]),pct=pick([60,75,80]),count=pick([3,4,5,6]);const one=round(total*pct/100/count*1000,4);return {q:`Zásilka má hmotnost ${String(total).replace('.',',')} kg. ${count} stejných předmětů tvoří ${pct} % její hmotnosti. Kolik gramů váží jeden předmět?`,answer:one,hint:'Nejdřív vypočítej hmotnost všech předmětů, pak vyděl jejich počtem.'}};
+
 export const massTasks={
-  easy:[
-    {q:'4 kg = ? g',answer:4000,choices:[40,400,4000,40000],hint:'1 kg = 1 000 g.'},
-    {q:'2 500 g = ? kg',answer:2.5,choices:[25,2.5,.25,250],hint:'1 kg = 1 000 g.'},
-    {q:'6 g = ? mg',answer:6000,choices:[60,600,6000,60000],hint:'1 g = 1 000 mg.'},
-    {q:'3,2 t = ? kg',answer:3200,choices:[32,320,3200,32000],hint:'1 t = 1 000 kg.'},
-    {q:'750 g = ? kg',answer:.75,choices:[.075,.75,7.5,75],hint:'1 kg = 1 000 g.'},
-    {q:'45 dag = ? g',answer:450,choices:[45,450,4500,4.5],hint:'1 dag = 10 g.'},
-    {q:'2 kg = ? dag',answer:200,choices:[20,200,2000,.2],hint:'1 kg = 100 dag.'},
-    {q:'8 000 mg = ? g',answer:8,choices:[.8,8,80,800],hint:'1 g = 1 000 mg.'}
+  easy:[simple('kg','g',1000,true),simple('g','kg',1000,false),simple('g','mg',1000,true),simple('mg','g',1000,false),simple('t','kg',1000,true),simple('dag','g',10,true),simple('kg','dag',100,true)],
+  medium:[simple('kg','g',1000,true),simple('g','kg',1000,false),simple('t','kg',1000,true),simple('kg','dag',100,true),simple('mg','g',1000,false),
+    () => {const kg=pick([1,2,3,4,5]),g=pick([125,250,375,500,750]);return {q:`${kg} kg ${g} g = ? g`,answer:kg*1000+g,hint:'Kilogramy převeď na gramy a přičti zbytek.'}}
   ],
-  medium:[
-    {q:'0,035 kg = ? g',answer:35,hint:'1 kg = 1 000 g.'},
-    {q:'1,8 t = ? kg',answer:1800,hint:'1 t = 1 000 kg.'},
-    {q:'2,45 kg = ? g',answer:2450,hint:'Násob 1 000.'},
-    {q:'875 g = ? kg',answer:.875,hint:'Děl 1 000.'},
-    {q:'0,006 t = ? kg',answer:6,hint:'1 t = 1 000 kg.'},
-    {q:'3 kg 250 g = ? g',answer:3250,hint:'3 kg = 3 000 g.'},
-    {q:'1,25 kg = ? dag',answer:125,hint:'1 kg = 100 dag.'},
-    {q:'42 000 mg = ? g',answer:42,hint:'1 g = 1 000 mg.'}
+  hard:[packageNet,truck,equalPacks,capacity,
+    () => {const count=pick([12,18,24,30]),each=pick([50,75,120,150,200]);return {q:`Balení obsahuje ${count} kusů po ${each} g. Kolik kilogramů váží jejich obsah celkem?`,answer:round(count*each/1000,4),hint:'Vypočítej gramy a převeď na kilogramy.'}},
+    () => {const total=pick([1.2,1.6,2.4,3.2]),denom=pick([2,4,5,8]);return {q:`Náklad má ${String(total).replace('.',',')} t. Zůstane 1/${denom} původní hmotnosti. Kolik kilogramů zůstane?`,answer:round(total*1000/denom,4),hint:'Tuny převeď na kilogramy a vyděl.'}}
   ],
-  hard:[
-    {q:'Balík váží 3,75 kg a obal 280 g. Kolik gramů váží samotný obsah?',answer:3470,hint:'3,75 kg = 3 750 g.'},
-    {q:'Auto veze 1,26 t nákladu a vyloží 385 kg. Kolik kilogramů nákladu mu zůstane?',answer:875,hint:'1,26 t = 1 260 kg.'},
-    {q:'Šest stejných balíčků váží dohromady 4,8 kg. Kolik gramů váží jeden balíček?',answer:800,hint:'4,8 kg = 4 800 g a potom vyděl šesti.'},
-    {q:'Recept potřebuje 0,35 kg mouky a 125 g cukru. Kolik gramů surovin je to dohromady?',answer:475,hint:'0,35 kg = 350 g.'},
-    {q:'Paleta unese nejvýše 1,2 t. Už na ní je 845 kg. Kolik kilogramů lze ještě přidat?',answer:355,hint:'1,2 t = 1 200 kg.'},
-    {q:'Balení obsahuje 24 sáčků po 75 g. Kolik kilogramů váží jejich obsah celkem?',answer:1.8,hint:'24 × 75 g = 1 800 g.'},
-    {q:'Náklad má 2,4 t. Tři čtvrtiny se vyloží. Kolik kilogramů nákladu zůstane?',answer:600,hint:'Zůstane jedna čtvrtina z 2,4 t.'},
-    {q:'Čtyři stejné kovové díly váží dohromady 3,6 kg. Kolik gramů váží jeden díl?',answer:900,hint:'3,6 kg = 3 600 g.'}
-  ],
-  challenge:[
-    {q:'Osm stejných beden má dohromady hmotnost 94,4 kg. Každá prázdná bedna váží 1,8 kg. Kolik kilogramů váží samotné zboží?',answer:80,hint:'Osm prázdných beden váží 14,4 kg.'},
-    {q:'Kamion může vézt nejvýše 12,5 t. Naloženo je 8 palet po 1 280 kg. Kolik kilogramů lze ještě naložit?',answer:2260,hint:'8 × 1 280 kg = 10 240 kg. Limit je 12 500 kg.'},
-    {q:'Směs obsahuje 35 % látky A. Kolik gramů látky A je ve 2,4 kg směsi?',answer:840,hint:'2,4 kg = 2 400 g. Vypočítej 35 %.'},
-    {q:'Pět stejných výrobků a obal o hmotnosti 350 g váží dohromady 4,6 kg. Kolik gramů váží jeden výrobek?',answer:850,hint:'4,6 kg = 4 600 g. Odečti obal a vyděl pěti.'},
-    {q:'Nádrž obsahuje 1,6 t materiálu. Odebere se 12,5 % původní hmotnosti. Kolik kilogramů materiálu zůstane?',answer:1400,hint:'1,6 t = 1 600 kg. Odebere se jedna osmina.'},
-    {q:'Zásilka má hmotnost 18,75 kg. Čtyři stejné předměty tvoří 80 % její hmotnosti. Kolik gramů váží jeden předmět?',answer:3750,hint:'80 % z 18,75 kg je 15 kg. Potom vyděl čtyřmi.'}
+  challenge:[percentMass,boxesGoods,itemFromPercent,
+    () => {const max=pick([10,12.5,15,18]),pallets=pick([6,8,10]),each=pick([850,960,1120,1280]);const loaded=pallets*each,limit=max*1000;if(loaded>=limit)return percentMass();return {q:`Vozidlo může vézt nejvýše ${String(max).replace('.',',')} t. Naloženo je ${pallets} palet po ${spaced(each)} kg. Kolik kilogramů lze ještě naložit?`,answer:limit-loaded,hint:'Spočítej hmotnost palet a porovnej ji s limitem v kilogramech.'}},
+    () => {const total=pick([1.2,1.6,2.4,3.2]),pct=pick([12.5,20,25,37.5]);return {q:`Zásoba má hmotnost ${String(total).replace('.',',')} t. Odebere se ${String(pct).replace('.',',')} % původní hmotnosti. Kolik kilogramů zůstane?`,answer:round(total*1000*(100-pct)/100,4),hint:'Tuny převeď na kilogramy a vypočítej zbývající procento.'}}
   ]
 };
