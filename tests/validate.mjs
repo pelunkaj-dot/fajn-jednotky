@@ -1,5 +1,6 @@
 import { categories } from '../data/categories.js';
 import { pickTask, equal } from '../js/core.js';
+import { solutionSteps } from '../js/solutions.js';
 
 const RUNS_PER_LEVEL = 1500;
 const errors = [];
@@ -32,6 +33,21 @@ function validateCzech(scope, task) {
   }
 }
 
+function validateSolution(scope, task) {
+  try {
+    const steps=solutionSteps(task);
+    if (!Array.isArray(steps) || steps.length < 2) {
+      fail(scope,'Řešení nemá alespoň dva kroky.',task);
+      return;
+    }
+    if (steps.some(step=>typeof step!=='string'||!step.trim())) {
+      fail(scope,'Řešení obsahuje prázdný krok.',task);
+    }
+  } catch (err) {
+    fail(scope,`Generování řešení selhalo: ${err.message}`,task);
+  }
+}
+
 function validateTask(scope, level, task) {
   generated++;
 
@@ -56,6 +72,7 @@ function validateTask(scope, level, task) {
   }
 
   validateCzech(scope, task);
+  validateSolution(scope, task);
 }
 
 for (const [catKey, category] of Object.entries(categories)) {
