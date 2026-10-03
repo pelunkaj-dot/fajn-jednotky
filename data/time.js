@@ -26,9 +26,12 @@ const arrival = () => {
   return {q:`Cesta začala v ${sh}:${String(sm).padStart(2,'0')} a trvala ${Math.floor(dur/60)} h ${dur%60} min. V kolik hodin skončila? Zapiš čas jako číslo ve tvaru HHMM, například 1635.`,answer:eh*100+em,hint:'Přičti dobu cesty k času odjezdu.'};
 };
 const overnight = () => {
-  const sh=pick([21,22,23]),sm=pick([10,25,36,48,55]),dur=pick([75,89,112,158,232]);
-  const end=(sh*60+sm+dur)%(24*60),eh=Math.floor(end/60),em=end%60;
-  return {q:`Cesta začala ve ${sh}:${String(sm).padStart(2,'0')} a trvala ${dur} minut. V kolik hodin skončila následujícího dne? Zapiš čas jako číslo ve tvaru HHMM.`,answer:eh*100+em,hint:'Přičti délku cesty a správně přejdi přes půlnoc.'};
+  const sh=pick([21,22,23]),sm=pick([10,25,36,48,55]);
+  const start=sh*60+sm;
+  const minDuration=24*60-start+15;
+  const dur=pick([minDuration,minDuration+25,minDuration+50,minDuration+85,minDuration+120]);
+  const end=(start+dur)%(24*60),eh=Math.floor(end/60),em=end%60;
+  return {q:`Cesta začala ve ${sh}:${String(sm).padStart(2,'0')} a skončila po půlnoci po ${dur} minutách. V kolik hodin skončila? Zapiš čas jako číslo ve tvaru HHMM.`,answer:eh*100+em,hint:'Přičti délku cesty a správně přejdi přes půlnoc.'};
 };
 const decimalHours = () => {
   const minutes=pick([6,12,15,18,24,30,36,42,45,48,54]);
@@ -50,7 +53,7 @@ export const timeTasks={
   medium:[mixedToMinutes,hoursMinutes,
     () => {const min=pick([75,90,105,135,150,165,195,210]);return {q:`${min} min = ? h`,answer:round(min/60,4),hint:'Minuty vyděl 60.'}},
     () => {const s=pick([3600,4500,5400,7200,9000]);return {q:`${s} s = ? min`,answer:s/60,hint:'Sekundy vyděl 60.'}},
-    () => {const d=pick([1,2,3]),h=pick([3,6,9,12,18]);return {q:`${d} den ${h} h = ? h`,answer:d*24+h,hint:'Každý den má 24 hodin.'}},
+    () => {const d=pick([1,2,3]),h=pick([3,6,9,12,18]);const dayWord=d===1?'den':'dny';return {q:`${d} ${dayWord} ${h} h = ? h`,answer:d*24+h,hint:'Každý den má 24 hodin.'}},
     () => {const w=pick([1,2,3,4]),d=pick([1,2,3,4,5,6]);return {q:`${w} týdny ${d} dny = ? dní`,answer:w*7+d,hint:'Každý týden má 7 dní.'}}
   ],
   hard:[intervalSameDay,arrival,decimalHours,
