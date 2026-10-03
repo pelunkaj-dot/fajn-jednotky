@@ -106,3 +106,9 @@ if (errors.length) {
 }
 
 console.log('\nOK: nebyla nalezena žádná blokující chyba.');
+
+
+console.log('\nDidaktická sekvence odpovědí je řízena v js/app.js:');
+console.log('1. chyba -> pouze upozornění');
+console.log('2. chyba -> nabídka nápovědy');
+console.log('po nápovědě + další chyba -> nabídka zobrazení řešení');
