@@ -1,7 +1,7 @@
 import { categories } from '../data/categories.js';
 import { difficultyMeta,pickTask,parseAnswer,equal } from './core.js';
 import { loadProgress,saveProgress } from './progress.js';
-import { worldState } from './world.js';
+import { worldState, missionState } from './world.js';
 import { playCorrect,playWrong,playHint,playStreak,playUnlock } from './audio.js';
 
 let difficulty='easy';
@@ -22,7 +22,11 @@ const ui={
   meta:$('#exerciseMeta'),title:$('#exerciseTitle'),badge:$('#difficultyBadge'),q:$('#questionText'),answer:$('#answerArea'),
   feedback:$('#feedback'),hint:$('#hintBtn'),next:$('#newBtn'),xp:$('#xp'),streak:$('#streak'),
   worldPanel:$('#worldPanel'),worldTitle:$('#worldTitle'),worldText:$('#worldText'),worldFill:$('#worldFill'),
-  worldPct:$('#worldPct'),sound:$('#soundToggle')
+  worldPct:$('#worldPct'),sound:$('#soundToggle'),
+  missionBar:$('#missionBar'),missionTitle:$('#missionTitle'),missionProgressText:$('#missionProgressText'),
+  missionProgressFill:$('#missionProgressFill'),missionComplete:$('#missionComplete'),
+  missionCompleteTitle:$('#missionCompleteTitle'),missionCompleteText:$('#missionCompleteText'),
+  missionReward:$('#missionReward'),missionWorldBtn:$('#missionWorldBtn'),missionAgainBtn:$('#missionAgainBtn')
 };
 
 function init(){
@@ -44,8 +48,10 @@ function bind(){
     refreshSoundButton();
     if(progress.sound) playHint();
   };
-  $$('[data-theme-btn]').forEach(btn=>btn.onclick=()=>setTheme(btn.dataset.themeBtn));
-  $$('[data-world-category]').forEach(btn=>btn.onclick=()=>openCategory(btn.dataset.worldCategory));
+  $('[data-theme-btn]').forEach(btn=>btn.onclick=()=>setTheme(btn.dataset.themeBtn));
+  $('[data-world-category]').forEach(btn=>btn.onclick=()=>openCategory(btn.dataset.worldCategory));
+  ui.missionWorldBtn.onclick=()=>closeMissionComplete(true);
+  ui.missionAgainBtn.onclick=()=>closeMissionComplete(false);
 }
 function setTheme(theme){
   progress.theme=theme;
@@ -87,6 +93,7 @@ function openCategory(key){
   ui.panel.classList.remove('hidden');
   newTask();
   renderWorld();
+  renderMission();
   ui.panel.scrollIntoView({behavior:'smooth',block:'start'});
 }
 function resetAttemptState(){
@@ -109,6 +116,7 @@ function newTask(){
   ui.q.textContent=task.q;
   ui.q.title=difficultyMeta[difficulty].detail;
   renderAnswer();
+  renderMission();
 }
 function renderAnswer(){
   ui.answer.innerHTML='';
@@ -140,11 +148,13 @@ function check(value){
 
   if(equal(Number(value),Number(task.answer))){
     const before=worldState(progress);
+    const beforeMission=selected?missionState(selected,progress.byCategory[selected].correct):null;
     progress.totalCorrect++;
     progress.streak++;
     if(selected) progress.byCategory[selected].correct++;
     progress.xp+=difficulty==='easy'?10:difficulty==='medium'?18:difficulty==='hard'?28:40;
     const after=worldState(progress);
+    const afterMission=selected?missionState(selected,progress.byCategory[selected].correct):null;
 
     const phaseBefore=selected?before.states[selected].phase:0;
     const phaseAfter=selected?after.states[selected].phase:0;
@@ -155,6 +165,9 @@ function check(value){
     saveProgress(progress);
     refreshStats();
     renderWorld();
+    renderMission();
+
+    const missionCompleted = beforeMission && afterMission && !beforeMission.complete && afterMission.start > beforeMission.start;
 
     if(unlocked){
       sound(playUnlock);
@@ -167,7 +180,14 @@ function check(value){
       animateWorld('flash-good');
     }
 
-    setTimeout(newTask,unlocked?1300:900);
+    if(missionCompleted){
+      progress.xp+=50;
+      saveProgress(progress);
+      refreshStats();
+      setTimeout(()=>showMissionComplete(after.states[selected]),850);
+    }else{
+      setTimeout(newTask,unlocked?1300:900);
+    }
     return;
   }
 
@@ -233,6 +253,31 @@ function showFeedback(kind,text){
 function refreshStats(){
   ui.xp.textContent=progress.xp;
   ui.streak.textContent=progress.streak;
+}
+function renderMission(){
+  if(!selected){
+    ui.missionBar.classList.add('hidden');
+    return;
+  }
+  ui.missionBar.classList.remove('hidden');
+  const m=missionState(selected,progress.byCategory[selected].correct);
+  ui.missionTitle.textContent=m.complete?'Čtvrť je dokončená':m.title;
+  ui.missionProgressText.textContent=m.complete?'Hotovo':`${m.done} / 10`;
+  ui.missionProgressFill.style.width=`${m.pct}%`;
+}
+function showMissionComplete(state){
+  ui.missionCompleteTitle.textContent=`${state.label} je hotovo!`;
+  ui.missionCompleteText.textContent=`Čtvrť ${state.name} právě získala novou stavbu. Můžeš se na ni podívat, nebo rovnou pokračovat další misí.`;
+  ui.missionReward.textContent='+50 XP za dokončenou misi';
+  ui.missionComplete.classList.remove('hidden');
+}
+function closeMissionComplete(showWorld){
+  ui.missionComplete.classList.add('hidden');
+  if(showWorld){
+    ui.worldPanel.scrollIntoView({behavior:'smooth',block:'start'});
+  }else if(selected){
+    newTask();
+  }
 }
 function renderWorld(){
   const w=worldState(progress);
