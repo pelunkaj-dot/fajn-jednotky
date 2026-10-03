@@ -1,40 +1,60 @@
+import { pick, round, choiceSet } from './helpers.js';
+
+const simple = (from,to,factor,down=true) => () => {
+  const base=down?pick([1.2,1.5,2.4,2.75,3.6,4.25,5.8,7.5]):pick([120,250,480,750,1250,2400,3750,8500]);
+  const answer=down?round(base*factor,6):round(base/factor,6);
+  return {q:`${String(base).replace('.',',')} ${from} = ? ${to}`,answer,choices:choiceSet(answer,[answer*10,answer/10,answer*100]),hint:`Mezi ${from} a ${to} je převodní poměr ${factor}:1.`};
+};
+const box = () => {
+  const a=pick([20,30,40,50,60]), b=pick([20,25,30,35,40]), c=pick([20,25,30,40,50]);
+  return {q:`Krabice má rozměry ${a} cm × ${b} cm × ${c} cm. Jaký má objem v dm³?`,answer:round(a*b*c/1000,4),hint:'Vypočítej cm³ a vyděl 1 000.'};
+};
+const aquarium = () => {
+  const a=pick([50,60,80,100]), b=pick([25,30,35,40]), h=pick([30,40,50]);
+  return {q:`Akvárium má vnitřní rozměry ${a} cm × ${b} cm × ${h} cm. Kolik litrů pojme po okraj?`,answer:round(a*b*h/1000,4),hint:'1 000 cm³ = 1 l.'};
+};
+const percentageTank = () => {
+  const m3=pick([.24,.3,.36,.45,.5,.6]), pct=pick([40,50,60,68,75,80]);
+  return {q:`Nádrž o objemu ${String(m3).replace('.',',')} m³ je naplněná z ${pct} %. Kolik litrů kapaliny obsahuje?`,answer:round(m3*1000*pct/100,4),hint:'Nejdřív převeď m³ na litry a pak vypočítej procenta.'};
+};
+const levelHeight = () => {
+  const a=pick([30,40,50,60]), b=pick([20,25,30,40]), h=pick([10,15,20,25,30]);
+  const liters=a*b*h/1000;
+  return {q:`Obdélníková nádoba má dno ${a} cm × ${b} cm. Do jaké výšky v centimetrech sahá hladina, jestliže nádoba obsahuje ${String(liters).replace('.',',')} l vody?`,answer:h,hint:'Litry převeď na cm³ a objem vyděl obsahem dna.'};
+};
+const flow = () => {
+  const rate=pick([8,10,12,15,18,20]), minutes=pick([12,18,24,30,40]);
+  const liters=rate*minutes;
+  return {q:`Do prázdné nádrže přitéká ${rate} l vody za minutu. Nádrž má objem ${String(liters/1000).replace('.',',')} m³. Za kolik minut se naplní?`,answer:minutes,hint:'Objem nádrže převeď na litry a vyděl průtokem.'};
+};
+const cubePercent = () => {
+  const edge=pick([30,40,50,60]), pct=pick([50,60,75,80]);
+  const full=edge**3/1000;
+  return {q:`Krychlová nádoba má vnitřní hranu ${edge} cm a je naplněná do ${pct} % objemu. Kolik litrů kapaliny obsahuje?`,answer:round(full*pct/100,4),hint:'Nejdřív vypočítej objem celé krychle.'};
+};
+const removePercent = () => {
+  const liters=pick([12,18,24,32,40,48]), pct=pick([20,25,35,40,50]);
+  return {q:`V nádobě je ${liters} l kapaliny. Odlijeme ${pct} % původního množství. Kolik litrů zůstane?`,answer:round(liters*(100-pct)/100,4),hint:'Zůstane 100 % minus odlité procento.'};
+};
+
 export const volumeTasks={
   easy:[
-    {q:'2 dm³ = ? cm³',answer:2000,choices:[20,200,2000,20000],hint:'1 dm³ = 1 000 cm³.'},
-    {q:'3 l = ? ml',answer:3000,choices:[30,300,3000,30000],hint:'1 l = 1 000 ml.'},
-    {q:'450 ml = ? dl',answer:4.5,choices:[.45,4.5,45,4500],hint:'1 dl = 100 ml.'},
-    {q:'6 dm³ = ? l',answer:6,choices:[.6,6,60,600],hint:'1 dm³ = 1 l.'},
-    {q:'2 m³ = ? l',answer:2000,choices:[20,200,2000,20000],hint:'1 m³ = 1 000 l.'},
-    {q:'750 cm³ = ? ml',answer:750,choices:[75,750,7500,.75],hint:'1 cm³ = 1 ml.'},
-    {q:'8 l = ? dl',answer:80,choices:[8,80,800,.8],hint:'1 l = 10 dl.'},
-    {q:'5 000 ml = ? l',answer:5,choices:[.5,5,50,500],hint:'1 l = 1 000 ml.'}
+    simple('l','ml',1000,true),simple('ml','l',1000,false),simple('l','dl',10,true),simple('dl','l',10,false),
+    simple('dm³','cm³',1000,true),simple('cm³','dm³',1000,false),simple('m³','l',1000,true),
+    () => ({q:'750 cm³ = ? ml',answer:750,choices:[75,750,7500,.75],hint:'1 cm³ = 1 ml.'})
   ],
   medium:[
-    {q:'0,035 m³ = ? dm³',answer:35,hint:'1 m³ = 1 000 dm³.'},
-    {q:'4,7 dm³ = ? l',answer:4.7,hint:'1 dm³ = 1 l.'},
-    {q:'2,35 l = ? ml',answer:2350,hint:'1 l = 1 000 ml.'},
-    {q:'0,84 dm³ = ? cm³',answer:840,hint:'1 dm³ = 1 000 cm³.'},
-    {q:'1 250 cm³ = ? dm³',answer:1.25,hint:'1 dm³ = 1 000 cm³.'},
-    {q:'0,006 m³ = ? l',answer:6,hint:'1 m³ = 1 000 l.'},
-    {q:'3,6 hl = ? l',answer:360,hint:'1 hl = 100 l.'},
-    {q:'875 ml = ? l',answer:.875,hint:'1 l = 1 000 ml.'}
+    simple('m³','dm³',1000,true),simple('dm³','m³',1000,false),simple('l','ml',1000,true),simple('ml','l',1000,false),
+    simple('dm³','cm³',1000,true),simple('cm³','dm³',1000,false),simple('hl','l',100,true),
+    () => {const v=pick([.8,1.25,2.4,3.75,4.7]); return {q:`${String(v).replace('.',',')} dm³ = ? l`,answer:v,hint:'1 dm³ = 1 l.'}}
   ],
-  hard:[
-    {q:'Nádrž má objem 0,28 m³. Kolik litrů vody se do ní vejde?',answer:280,hint:'1 m³ = 1 000 l.'},
-    {q:'Krabice má rozměry 40 cm × 25 cm × 30 cm. Jaký má objem v dm³?',answer:30,hint:'Vypočítej objem v cm³ a potom děl 1 000.'},
-    {q:'Akvárium má rozměry 60 cm × 30 cm × 40 cm. Kolik litrů pojme po okraj?',answer:72,hint:'Objem je 72 000 cm³ a 1 000 cm³ = 1 l.'},
-    {q:'Sud obsahuje 1,8 hl vody. Odlijeme 35 l. Kolik litrů vody v sudu zůstane?',answer:145,hint:'1,8 hl = 180 l.'},
-    {q:'Nádoba má objem 12 dm³ a je naplněná do tří čtvrtin. Kolik litrů kapaliny obsahuje?',answer:9,hint:'12 dm³ = 12 l. Vypočítej tři čtvrtiny z 12.'},
-    {q:'Bazének má dno 2,5 m × 1,8 m a voda sahá do výšky 40 cm. Kolik litrů vody v něm je?',answer:1800,hint:'40 cm = 0,4 m. Objem je 1,8 m³.'},
-    {q:'Láhev má objem 1,5 l. Kolik takových lahví naplníš z 18 l nápoje?',answer:12,hint:'18 ÷ 1,5.'},
-    {q:'Krychle má hranu 20 cm. Jaký má objem v litrech?',answer:8,hint:'20 × 20 × 20 = 8 000 cm³.'}
+  hard:[box,aquarium,
+    () => {const hl=pick([1.2,1.5,1.8,2.4]), out=pick([25,35,45,60]);return {q:`Sud obsahuje ${String(hl).replace('.',',')} hl vody. Odlijeme ${out} l. Kolik litrů zůstane?`,answer:hl*100-out,hint:'Hektolitry převeď na litry.'}},
+    () => {const liters=pick([9,12,15,18,24]), denom=pick([2,3,4]);return {q:`Nádoba má objem ${liters} dm³ a je naplněná do ${denom-1}/${denom}. Kolik litrů kapaliny obsahuje?`,answer:round(liters*(denom-1)/denom,4),hint:'1 dm³ = 1 l.'}},
+    () => {const a=pick([1.5,2,2.5,3]),b=pick([1.2,1.5,1.8,2]),h=pick([.3,.4,.5]);return {q:`Bazének má dno ${String(a).replace('.',',')} m × ${String(b).replace('.',',')} m a voda sahá do výšky ${Math.round(h*100)} cm. Kolik litrů vody obsahuje?`,answer:round(a*b*h*1000,4),hint:'Výšku převeď na metry, vypočítej m³ a potom litry.'}},
+    () => {const bottle=pick([.5,.75,1,1.5,2]), count=pick([8,10,12,16,20]);return {q:`Kolik lahví o objemu ${String(bottle).replace('.',',')} l naplníš z ${String(bottle*count).replace('.',',')} l nápoje?`,answer:count,hint:'Celkový objem vyděl objemem jedné lahve.'}}
   ],
-  challenge:[
-    {q:'Akvárium má rozměry 80 cm × 35 cm × 40 cm a voda sahá do 75 % jeho výšky. Kolik litrů vody obsahuje?',answer:84,hint:'Výška vody je 30 cm. Vypočítej objem vody v cm³ a převeď ho na litry.'},
-    {q:'Nádrž o objemu 0,45 m³ je naplněná z 68 %. Kolik litrů vody v ní je?',answer:306,hint:'0,45 m³ = 450 l. Potom vypočítej 68 % z 450.'},
-    {q:'Krychlová nádoba má vnitřní hranu 50 cm. Je naplněná do 80 % objemu. Kolik litrů kapaliny obsahuje?',answer:100,hint:'Plný objem je 125 000 cm³ = 125 l.'},
-    {q:'Do nádrže přitéká 12 l vody za minutu. Za jak dlouho v minutách se naplní prázdná nádrž o objemu 0,36 m³?',answer:30,hint:'0,36 m³ = 360 l. Potom 360 ÷ 12.'},
-    {q:'Obdélníková nádoba má dno 40 cm × 25 cm. Kolik centimetrů musí být vysoká hladina, aby obsahovala 15 litrů vody?',answer:15,hint:'15 l = 15 000 cm³. Výšku získáš dělením objemu obsahem dna.'},
-    {q:'Z nádoby o objemu 24 l se odlije 35 % kapaliny. Kolik litrů v ní zůstane?',answer:15.6,hint:'Zůstává 65 % z 24 l.'}
+  challenge:[percentageTank,levelHeight,flow,cubePercent,removePercent,
+    () => {const a=pick([60,80,100]),b=pick([30,35,40]),h=pick([40,50,60]),pct=pick([60,70,75,80]);return {q:`Akvárium má rozměry ${a} cm × ${b} cm × ${h} cm. Voda sahá do ${pct} % výšky. Kolik litrů vody obsahuje?`,answer:round(a*b*h*pct/100/1000,4),hint:'Vypočítej skutečnou výšku vody a potom objem.'}}
   ]
 };
