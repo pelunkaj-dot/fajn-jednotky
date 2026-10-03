@@ -4,7 +4,7 @@ import { volumeTasks } from './volume.js';
 import { timeTasks } from './time.js';
 import { massTasks } from './mass.js';
 
-const simpleEquation = task => /^[\d\s,.]+\s*(mm²|cm²|dm²|m²|km²|mm³|cm³|dm³|m³|mm|cm|dm|m|km|mg|g|dag|kg|t|ml|cl|dl|l|hl|min|h|s)\s*=\s*\?/.test(task.q);
+const simpleEquation = task => /^[\d\s,.]+\s*(mm²|cm²|dm²|m²|km²|mm³|cm³|dm³|m³|mm|cm|dm|m|km|mg|g|dkg\s*\(dag\)|kg|t|ml|cl|dl|l|hl|min|h|s)\s*=\s*\?/.test(task.q);
 const has = (task,re) => re.test(task.q);
 
 export const categories={
