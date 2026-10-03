@@ -3,6 +3,7 @@ import { difficultyMeta,pickTask,parseAnswer,equal } from './core.js';
 import { loadProgress,saveProgress,ensureTopicStats,ensureMissionRun,completeMissionRun } from './progress.js';
 import { worldState, missionState } from './world.js';
 import { playCorrect,playWrong,playHint,playStreak,playUnlock } from './audio.js';
+import { solutionSteps } from './solutions.js';
 
 let difficulty='easy';
 let selected=null;
@@ -340,8 +341,8 @@ function revealSolution(){
   disableAnswer();
 
   const answerText=String(task.answer).replace('.',',');
-  const explanation=task.explanation || task.hint || 'Převeď veličiny do stejných jednotek a postupuj po jednotlivých krocích.';
-  showFeedback('bad',`Správná odpověď je ${answerText}. Postup: ${explanation}`);
+  const steps=solutionSteps(task);
+  showSolutionFeedback(answerText,steps);
 }
 function disableAnswer(){
   ui.answer.querySelectorAll('button,input').forEach(el=>el.disabled=true);
@@ -353,6 +354,13 @@ function focusAnswer(){
 function showFeedback(kind,text){
   ui.feedback.className=`feedback ${kind}`;
   ui.feedback.textContent=text;
+}
+function showSolutionFeedback(answerText,steps){
+  ui.feedback.className='feedback solution';
+  ui.feedback.innerHTML=`
+    <div class="solution-title">Správná odpověď: <strong>${answerText}</strong></div>
+    <ol class="solution-steps">${steps.map(step=>`<li>${safeText(step)}</li>`).join('')}</ol>
+  `;
 }
 function refreshStats(){
   ui.xp.textContent=progress.xp;
